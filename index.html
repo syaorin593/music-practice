@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CYBER TIMELINE v19</title>
+<title>CYBER TIMELINE v20</title>
 <style>
     /* --- 全体設定 --- */
     body { 
@@ -24,11 +24,23 @@
         text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
     }
 
+    /* ローディング */
+    #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 2000;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .spinner {
+        width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00f3ff;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     /* エリア共通 */
     .config-area {
         background: rgba(255, 255, 255, 0.05); border: 1px solid #555;
         padding: 10px; border-radius: 8px; width: 90%; max-width: 600px;
-        margin-bottom: 15px; text-align: center;
+        margin-bottom: 10px; text-align: center;
     }
     .config-title { font-size: 12px; color: #aaa; margin-bottom: 5px; border-bottom:1px solid #444; padding-bottom:2px; font-weight:bold;}
 
@@ -37,14 +49,18 @@
     .input-box label { font-size: 10px; color: #0f0; margin-bottom: 2px; }
     .input-box input, .input-box select { 
         width: 70px; background: #000; border: 1px solid #0f0; 
-        color: #fff; padding: 5px; text-align: center; border-radius: 4px; height: 30px; font-size: 16px; /* iPad用文字サイズ */
+        color: #fff; padding: 5px; text-align: center; border-radius: 4px; height: 30px;
     }
-    .check-box { font-size: 14px; display:flex; align-items:center; height:30px; cursor: pointer;}
-    .check-box input { width:20px; height:20px; margin-right: 5px; }
+    .check-box { font-size: 12px; display:flex; align-items:center; height:30px; cursor: pointer;}
+    .check-box input { margin-right: 5px; }
 
-    /* 色分け */
-    .metro-overlay label { color: #ff00ff; } .metro-overlay input { border-color: #ff00ff; color:#ff00ff; font-weight:bold; }
-    .rec-setting label { color: #00f3ff; } .rec-setting input { border-color: #00f3ff; }
+    /* メトロノーム設定 */
+    .metro-overlay label { color: #ff00ff; }
+    .metro-overlay input { border-color: #ff00ff; color:#ff00ff; font-weight:bold; }
+
+    /* 録音設定 */
+    .rec-setting label { color: #00f3ff; }
+    .rec-setting input { border-color: #00f3ff; }
 
     /* 譜面リスト */
     #chart-list {
@@ -55,29 +71,31 @@
     }
     .chart-item {
         background: rgba(255, 255, 255, 0.05); color: #fff; 
-        padding: 15px; margin-bottom: 8px; border-radius: 8px; /* 大きく */
+        padding: 10px; margin-bottom: 5px; border-radius: 4px;
         display: flex; justify-content: space-between; align-items: center; 
-        border-left: 6px solid #444; transition: 0.2s;
+        border-left: 4px solid #444; transition: 0.2s;
     }
     .chart-item:hover { background: rgba(0, 243, 255, 0.1); border-left-color: #00f3ff; }
+    
     .chart-info { flex-grow: 1; text-align: left; cursor: pointer; }
-    .chart-title { font-size: 18px; font-weight: bold; }
-    .chart-sub { font-size: 12px; color: #888; }
+    .chart-title { font-size: 16px; font-weight: bold; }
+    .chart-sub { font-size: 11px; color: #888; }
 
     /* ボタン */
-    .menu-actions { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+    .menu-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .main-btn {
-        padding: 15px 30px; font-size: 16px; font-weight: bold; cursor: pointer;
-        color: #000; border: none; border-radius: 8px; 
+        padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer;
+        color: #000; border: none; border-radius: 4px; 
         text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
     }
-    #create-btn { background: #00f3ff; box-shadow: 0 0 15px rgba(0,243,255,0.4); }
+    #create-btn { background: #00f3ff; box-shadow: 0 0 10px rgba(0,243,255,0.4); }
     #import-btn { background: #e0e0e0; color: #333; }
-    #metro-btn { background: #0f0; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
-    .main-btn:active { transform: scale(0.95); }
+    #metro-btn { background: #0f0; box-shadow: 0 0 10px rgba(0,255,0,0.4); }
+    
+    .main-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
 
-    .btn-group { display: flex; gap: 10px; }
-    .btn-mini { padding: 8px 12px; font-size: 12px; cursor: pointer; border: 1px solid #666; background: transparent; color: #aaa; border-radius: 4px; }
+    .btn-group { display: flex; gap: 5px; }
+    .btn-mini { padding: 4px 8px; font-size: 10px; cursor: pointer; border: 1px solid #666; background: transparent; color: #aaa; border-radius: 4px; }
     .btn-del { border-color: #f05; color: #f05; }
     .btn-watch { border-color: #0f0; color: #0f0; }
 
@@ -85,97 +103,95 @@
     #game-screen {
         position: relative; width: 100vw; height: 100vh;
         background: #050510; display: none;
-        background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+        background-image: 
+            linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
         background-size: 50px 50px;
     }
 
-    /* ステータスバー（ヘッダー）の大型化 */
     #status-bar {
-        position: absolute; top: 0; width: 100%; height: 80px; /* 高さ確保 */
-        padding: 10px 20px;
-        display: flex; justify-content: space-between; align-items: center;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.5)); 
+        position: absolute; top: 0; width: 100%; height: 70px;
+        padding: 10px; display: flex; justify-content: space-between; align-items: center;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); 
         z-index: 200; box-sizing: border-box;
     }
 
-    /* ナビゲーションボタン（iPad用に巨大化） */
+    /* ナビボタン(iPad用大型化) */
     .nav-btn {
-        padding: 10px 25px; font-size: 16px; font-weight: bold; cursor: pointer;
-        border-radius: 8px; border: 2px solid #fff; color: #fff; background: rgba(255,255,255,0.1);
-        min-width: 100px; text-align: center;
+        padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 8px;
+        color: white; border: 2px solid #fff; background: rgba(0,0,0,0.5);
+        cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
     .nav-btn:active { background: #fff; color: #000; }
-    
-    #btn-stop { border-color: #ff4444; color: #ff4444; }
-    #btn-retry { border-color: #00f3ff; color: #00f3ff; }
-
-    #score-display-area { text-align: right; }
-    #score-live { font-family: 'Courier New', monospace; font-size: 32px; color: #fff; text-shadow: 0 0 10px #00f3ff; font-weight: bold; line-height: 1;}
-    #rank-live { font-size: 16px; color: #aaa; font-weight: bold; }
+    #btn-save { border-color: #ff0055; color: #ff0055; background: rgba(50,0,0,0.5); }
 
     #timeline-track {
-        position: absolute; top: 55%; left: 0; width: 100%; height: 180px; /* 少し太く */
+        position: absolute; top: 50%; left: 0; width: 100%; height: 160px;
         transform: translateY(-50%);
         background: rgba(0, 0, 0, 0.6);
-        border-top: 4px solid #00f3ff; border-bottom: 4px solid #00f3ff;
+        border-top: 2px solid #00f3ff; border-bottom: 2px solid #00f3ff;
         overflow: hidden;
-        box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
     }
 
     /* 判定枠 */
     #judge-point {
         position: absolute; top: 50%; left: 20%; 
-        width: 100px; height: 100px; 
+        width: 90px; height: 90px; 
         transform: translate(-50%, -50%);
-        border: 6px solid #fff; border-radius: 50%;
+        border: 4px solid #fff; border-radius: 50%;
         background: rgba(255,255,255,0.05);
         z-index: 10;
-        box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        box-shadow: 0 0 10px rgba(255,255,255,0.3);
     }
-    .hit-anim { border-color: #00f3ff !important; background: rgba(0, 243, 255, 0.3) !important; transform: translate(-50%, -50%) scale(1.1) !important; box-shadow: 0 0 40px #00f3ff !important; }
+    .hit-anim { border-color: #00f3ff !important; background: rgba(0, 243, 255, 0.3) !important; transform: translate(-50%, -50%) scale(1.1) !important; box-shadow: 0 0 30px #00f3ff !important; }
     .hold-anim { border-color: #ffaa00 !important; background: rgba(255, 170, 0, 0.2) !important; }
 
     /* ノーツ */
     .note {
-        position: absolute; top: 50%; height: 100px;
+        position: absolute; top: 50%; height: 90px;
         transform: translate(-50%, -50%);
         z-index: 8; pointer-events: none;
         box-sizing: border-box;
         display: flex; align-items: center; justify-content: center;
     }
     .note-tap {
-        width: 100px; border-radius: 50%;
-        background: #00f3ff; border: 5px solid #fff;
-        box-shadow: 0 0 20px #00f3ff;
+        width: 90px; border-radius: 50%;
+        background: #00f3ff; border: 4px solid #fff;
+        box-shadow: 0 0 15px #00f3ff;
     }
     .note-tap::after {
-        content: ''; position: absolute; width: 50px; height: 50px;
+        content: ''; position: absolute; width: 40px; height: 40px;
         border-radius: 50%; background: rgba(255,255,255,0.4);
     }
     .note-hold {
-        border-radius: 50px; background: #ffaa00; border: 5px solid #fff;
-        box-shadow: 0 0 20px #ffaa00; justify-content: flex-end;
+        border-radius: 45px; background: #ffaa00; border: 4px solid #fff;
+        box-shadow: 0 0 15px #ffaa00; justify-content: flex-end;
     }
     .note-hold::after {
-        content: ''; position: absolute; right: -5px; top: -5px;
-        width: 100px; height: 100px; border-radius: 50%; border: 5px solid #fff; background: transparent;
+        content: ''; position: absolute; right: -4px; top: -4px;
+        width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; background: transparent;
     }
 
-    /* 判定文字 */
     #judge-text {
         position: absolute; top: 25%; left: 20%; transform: translate(-50%, -50%);
-        font-size: 60px; font-weight: 900; font-style: italic;
-        text-shadow: 0 0 30px rgba(0,0,0,0.8); opacity: 0; z-index: 20; letter-spacing: 2px;
+        font-size: 50px; font-weight: 900; font-style: italic;
+        text-shadow: 0 0 20px rgba(0,0,0,0.8); opacity: 0; z-index: 20; letter-spacing: 2px;
     }
 
+    #score-live {
+        font-family: 'Courier New', monospace; font-size: 28px; 
+        color: #fff; text-shadow: 0 0 10px #00f3ff; font-weight: bold;
+    }
+    
     /* コンボ表示 */
     #combo-container {
         position: absolute; top: 50%; left: 20%; transform: translate(-50%, -50%);
         z-index: 5; text-align: center; pointer-events: none; opacity: 0;
         transition: transform 0.05s;
     }
-    #combo-num { font-size: 50px; font-weight: bold; color: #fff; text-shadow: 0 0 15px #00f3ff; line-height: 1; }
-    #combo-label { font-size: 14px; color: #00f3ff; font-weight: bold; letter-spacing: 2px; }
+    #combo-num { font-size: 40px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00f3ff; line-height: 1; }
+    #combo-label { font-size: 12px; color: #00f3ff; font-weight: bold; letter-spacing: 2px; }
 
     /* リザルト */
     #result-screen {
@@ -184,56 +200,29 @@
         display: none; flex-direction: column; align-items: center; justify-content: center;
     }
     .result-box {
-        border: 2px solid #fff; padding: 40px; width: 85%; max-width: 500px;
+        border: 1px solid #444; padding: 40px; width: 80%; max-width: 400px;
         text-align: center; background: #111;
-        box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); border-radius: 16px;
-        position: relative;
+        box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); border-radius: 8px;
     }
-    /* ランク表示 */
-    #final-rank { font-size: 120px; font-weight: 900; line-height: 1; margin: 10px 0; text-shadow: 0 0 30px currentColor; }
-    
-    .rank-s { color: #ffd700; }
-    .rank-a { color: #ff4444; }
-    .rank-b { color: #00f3ff; }
-    .rank-c { color: #0f0; }
-    .rank-d { color: #888; }
-
-    #special-banner {
-        font-size: 28px; font-weight: bold; margin-bottom: 10px;
-        background: linear-gradient(90deg, transparent, #fff, transparent);
-        -webkit-background-clip: text; color: transparent; 
-        text-shadow: 0 0 20px rgba(255,255,255,0.5); display: none;
-    }
-    .fc-style { color: #ffd700 !important; text-shadow: 0 0 20px #ffd700 !important; background: none !important; }
-    .ap-style { background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f) !important; -webkit-background-clip: text !important; text-shadow: 0 0 10px rgba(255,255,255,0.8) !important; animation: rainbow 2s linear infinite; }
-    @keyframes rainbow { 0%{filter: hue-rotate(0deg);} 100%{filter: hue-rotate(360deg);} }
-
-    .res-score { font-size: 60px; font-weight: bold; color: #fff; margin: 5px 0; font-family: 'Impact', sans-serif; }
-    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; text-align: left; padding: 0 30px; }
+    .res-score { font-size: 60px; font-weight: bold; color: #00f3ff; margin: 10px 0; font-family: 'Impact', sans-serif; }
+    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; text-align: left; padding: 0 20px; }
     .res-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 2px; }
-    .res-label { font-size: 16px; color: #aaa; }
-    .res-val { font-size: 20px; font-weight: bold; }
-
-    .res-btn {
-        padding: 15px 40px; font-size: 18px; font-weight: bold; cursor: pointer;
-        color: #000; border: none; border-radius: 50px; margin: 10px;
-        text-transform: uppercase; transition: 0.2s; min-width: 150px;
+    .res-label { font-size: 14px; color: #aaa; }
+    .res-val { font-size: 16px; font-weight: bold; }
+    
+    #special-banner {
+        font-size: 20px; font-weight: bold; margin-bottom: 5px;
+        display: none; text-shadow: 0 0 10px #fff;
     }
-    .btn-retry { background: #00f3ff; }
-    .btn-menu { background: #444; color: #fff; }
-    .res-btn:active { transform: scale(0.95); }
-
-    /* ローディング */
-    #loading-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); z-index: 2000;
-        display: none; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .spinner {
-        width: 60px; height: 60px; border: 6px solid #333; border-top: 6px solid #00f3ff;
-        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .fc-style { color: #ffd700; }
+    .ap-style { color: #fff; animation: rainbow 2s linear infinite; }
+    @keyframes rainbow { 0%{filter: hue-rotate(0deg);} 100%{filter: hue-rotate(360deg);} }
+    
+    .rank-s { color: #ffd700; font-size:80px; font-weight:900; }
+    .rank-a { color: #ff4444; font-size:80px; font-weight:900; }
+    .rank-b { color: #00f3ff; font-size:80px; font-weight:900; }
+    .rank-c { color: #0f0; font-size:80px; font-weight:900; }
+    .rank-d { color: #888; font-size:80px; font-weight:900; }
 
     /* モーダル */
     .modal {
@@ -242,10 +231,10 @@
         display: none; align-items: center; justify-content: center;
     }
     .modal-content {
-        background: #111; color: #fff; padding: 30px; border: 2px solid #333;
-        text-align: center; width: 90%; max-width: 500px; border-radius: 16px;
+        background: #111; color: #fff; padding: 25px; border: 1px solid #333;
+        text-align: center; width: 90%; max-width: 400px; border-radius: 8px;
     }
-    textarea { width: 100%; height: 100px; background: #000; color: #0f0; border: 1px solid #333; padding: 10px; font-size: 14px;}
+    textarea { width: 100%; height: 80px; background: #000; color: #0f0; border: 1px solid #333; padding: 5px; }
 
 </style>
 </head>
@@ -257,7 +246,7 @@
     </div>
 
     <div id="menu-screen">
-        <h1>CYBER TIMELINE v19</h1>
+        <h1>CYBER TIMELINE v20</h1>
         
         <div class="config-area">
             <div class="config-title" style="color:#0f0;">METRONOME MODE (NO FILE)</div>
@@ -304,19 +293,20 @@
 
     <div id="game-screen">
         <div id="status-bar">
-            <div style="display:flex; gap:20px;">
-                <button id="btn-stop" class="nav-btn" onclick="quitGameForce()">■ MENU</button>
-                <button id="btn-retry" class="nav-btn" onclick="restartGame(this)">↻ RETRY</button>
+            <div style="display:flex; gap:15px;">
+                <button id="btn-back" class="nav-btn" onclick="quitGameForce()" ontouchstart="quitGameForce()">EXIT</button>
+                <button id="btn-save" class="nav-btn" onclick="quitGameForce()" ontouchstart="quitGameForce()" style="display:none;">💾 SAVE & END</button>
+                <button id="btn-retry" class="nav-btn" style="border-color:#00f3ff; color:#00f3ff;" onclick="restartGame(this)" ontouchstart="restartGame(this)">RETRY</button>
             </div>
             
             <div style="display:flex; flex-direction:column; align-items:center;">
-                <div id="mode-display" style="font-weight:bold; color:#00f3ff; font-size:18px;">PLAY</div>
-                <button id="btn-toggle-metro" class="btn-mini" onclick="toggleOverlayMetro(this)" style="margin-top:5px; font-size:12px; width:100px; padding:5px;">METRO: OFF</button>
+                <div id="mode-display" style="font-weight:bold; color:#00f3ff;">PLAY</div>
+                <button id="btn-toggle-metro" class="btn-mini" onclick="toggleOverlayMetro(this)" ontouchstart="toggleOverlayMetro(this)" style="margin-top:2px; font-size:10px; width:80px; padding:5px;">METRO: OFF</button>
             </div>
 
             <div id="score-display-area">
                 <div id="score-live">000000</div>
-                <div id="rank-live">RANK --</div>
+                <div id="rank-live" style="font-size:12px; color:#aaa;">RANK --</div>
             </div>
         </div>
 
@@ -330,8 +320,8 @@
         </div>
 
         <div id="judge-text">READY</div>
-        <div style="position:absolute; bottom:30px; width:100%; text-align:center; color:rgba(255,255,255,0.3); font-size:14px; letter-spacing:2px; font-weight:bold;">
-            TAP SCREEN
+        <div style="position:absolute; bottom:30px; width:100%; text-align:center; color:rgba(255,255,255,0.3); font-size:12px; letter-spacing:2px;">
+            SPACE KEY / TAP SCREEN
         </div>
     </div>
 
@@ -349,31 +339,29 @@
                 <div class="res-row"><span class="res-label">MISS</span><span class="res-val" style="color:#555" id="res-miss">0</span></div>
                 <div class="res-row" style="margin-top:10px;"><span class="res-label">MAX COMBO</span><span class="res-val" id="res-combo">0</span></div>
             </div>
-            
             <br>
-            <button class="res-btn btn-retry" onclick="restartGameFromResult()">RETRY</button>
-            <button class="res-btn btn-menu" onclick="closeResultToMenu()">MENU</button>
+            <button class="main-btn" style="background:#00f3ff; color:#000;" onclick="restartGameFromResult()">RETRY</button>
+            <button class="main-btn" style="background:#444; color:#fff;" onclick="closeResultToMenu()">MENU</button>
         </div>
     </div>
 
     <div id="export-modal" class="modal">
-        <div class="modal-content"><h3>EXPORT DATA</h3><textarea id="export-text" readonly></textarea><br><br><button class="main-btn" onclick="copyToClipboard()" style="background:#00f3ff; color:black;">COPY</button><button class="main-btn" onclick="closeModal('export-modal')" style="background:#444; color:white;">CLOSE</button></div>
+        <div class="modal-content"><h3>EXPORT</h3><textarea id="export-text" readonly></textarea><br><br><button class="btn-mini" onclick="copyToClipboard()" style="border-color:#00f3ff; color:#00f3ff;">COPY</button><button class="btn-mini" onclick="closeModal('export-modal')">CLOSE</button></div>
     </div>
     <div id="import-modal" class="modal">
-        <div class="modal-content"><h3>IMPORT DATA</h3><textarea id="import-text" placeholder='Paste code here'></textarea><br><br><button class="main-btn" onclick="executeImport()" style="background:#00f3ff; color:black;">ADD</button><button class="main-btn" onclick="closeModal('import-modal')" style="background:#444; color:white;">CLOSE</button></div>
+        <div class="modal-content"><h3>IMPORT</h3><textarea id="import-text" placeholder='Paste code here'></textarea><br><br><button class="btn-mini" onclick="executeImport()" style="border-color:#00f3ff; color:#00f3ff;">ADD</button><button class="btn-mini" onclick="closeModal('import-modal')">CLOSE</button></div>
     </div>
     <div id="edit-modal" class="modal">
-        <div class="modal-content"><h3>EDIT TITLE</h3><input type="text" id="edit-title-input" style="padding:15px; width:80%; background:#000; color:#fff; border:1px solid #444; font-size:18px;"><br><br><button class="main-btn" onclick="saveEditedTitle()" style="background:#00f3ff; color:black;">SAVE</button><button class="main-btn" onclick="closeModal('edit-modal')" style="background:#444; color:white;">CANCEL</button></div>
+        <div class="modal-content"><h3>EDIT TITLE</h3><input type="text" id="edit-title-input" style="padding:10px; width:80%; background:#000; color:#fff; border:1px solid #444;"><br><br><button class="btn-mini" onclick="saveEditedTitle()" style="border-color:#00f3ff; color:#00f3ff;">SAVE</button><button class="btn-mini" onclick="closeModal('edit-modal')">CANCEL</button></div>
     </div>
 
 <script>
     // === 設定 ===
-    const J_PERFECT = 0.05; // 100%
-    const J_GREAT = 0.10;   // 80%
-    const J_GOOD = 0.15;    // 50%
-    
+    const J_PERFECT = 0.05; 
+    const J_GREAT = 0.10;   
+    const J_GOOD = 0.15;    
     const SPEED_BASE = 400; 
-    const NOTE_SIZE = 100;
+    const NOTE_SIZE = 90;
     const MAX_SCORE = 1000000;
 
     // === 変数 ===
@@ -401,17 +389,17 @@
 
     window.onload = () => {
         try {
-            const json = localStorage.getItem('cyber_timeline_v19');
+            const json = localStorage.getItem('cyber_timeline_v20');
             if (json) savedCharts = JSON.parse(json);
         } catch (e) { console.error(e); }
         renderChartList();
     };
 
     function saveCharts() {
-        localStorage.setItem('cyber_timeline_v19', JSON.stringify(savedCharts));
+        localStorage.setItem('cyber_timeline_v20', JSON.stringify(savedCharts));
         renderChartList();
     }
-    function resetAllData() { if(confirm("全データ削除しますか？")) { localStorage.removeItem('cyber_timeline_v19'); savedCharts = []; renderChartList(); } }
+    function resetAllData() { if(confirm("全データ削除しますか？")) { localStorage.removeItem('cyber_timeline_v20'); savedCharts = []; renderChartList(); } }
 
     const audioInput = document.getElementById('audio-input');
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -509,23 +497,19 @@
         document.getElementById('game-screen').style.display = 'block';
 
         const disp = document.getElementById('mode-display');
-        const stopBtn = document.getElementById('btn-stop');
+        const btnSave = document.getElementById('btn-save');
+        const btnBack = document.getElementById('btn-back');
         
+        // ボタンの切り替え
         if(mode === 'REC') { 
             disp.textContent = "● REC"; disp.style.color = "#ff4444"; 
-            stopBtn.textContent = "■ MENU / SAVE"; stopBtn.style.borderColor = "#f05"; stopBtn.style.color = "#f05";
-        }
-        else if(mode === 'AUTO') { 
-            disp.textContent = "👁 AUTO"; disp.style.color = "#0f0"; 
-            stopBtn.textContent = "■ MENU"; stopBtn.style.borderColor = "#fff"; stopBtn.style.color = "#fff";
-        }
-        else if(mode === 'METRONOME') { 
-            disp.textContent = "⏱ METRO"; disp.style.color = "#0f0"; 
-            stopBtn.textContent = "■ MENU"; stopBtn.style.borderColor = "#fff"; stopBtn.style.color = "#fff";
-        }
-        else { 
-            disp.textContent = "▶ PLAY"; disp.style.color = "#00f3ff"; 
-            stopBtn.textContent = "■ MENU"; stopBtn.style.borderColor = "#fff"; stopBtn.style.color = "#fff";
+            btnSave.style.display = 'inline-block';
+            btnBack.style.display = 'none';
+        } else {
+            disp.textContent = (mode==='AUTO'?"👁 AUTO":(mode==='METRONOME'?"⏱ METRO":"▶ PLAY"));
+            disp.style.color = (mode==='PLAY'?"#00f3ff":"#0f0");
+            btnSave.style.display = 'none';
+            btnBack.style.display = 'inline-block';
         }
 
         if(currentChart.data) {
@@ -562,7 +546,7 @@
     }
 
     function restartGame(btn) {
-        if(btn) btn.blur(); 
+        if(btn && typeof btn.blur === 'function') btn.blur(); 
         if(confirm("最初からやり直しますか？")) {
             isRunning = false;
             cancelAnimationFrame(animationId);
@@ -683,7 +667,6 @@
         });
 
         // 終了判定
-        let finishTime = lastNoteTime;
         let tEnd = currentChart.trimEnd || 0;
         if(tEnd === 0 && musicBuffer) tEnd = musicBuffer.duration;
         else if(tEnd === 0 && mode === 'METRONOME') tEnd = currentChart.trimEnd;
@@ -816,7 +799,7 @@
             const endTime = currentHoldNote.data.time + currentHoldNote.data.duration;
             const diff = Math.abs(now - endTime);
             if (diff < J_GOOD) completeHold(currentHoldNote);
-            else if (now < endTime - J_GOOD) {
+            else if (now < endTime - J_GOOD) { 
                 triggerMiss(currentHoldNote);
                 currentHoldNote = null;
                 document.getElementById('judge-point').classList.remove('hold-anim');
@@ -852,7 +835,7 @@
     }
 
     function toggleOverlayMetro(btn) {
-        if(btn) btn.blur();
+        if(btn && typeof btn.blur === 'function') btn.blur();
         isOverlayMetroEnabled = !isOverlayMetroEnabled;
         updateMetroBtn();
     }
@@ -932,14 +915,22 @@
         document.getElementById('result-screen').style.display = 'flex';
     }
     function closeResultToMenu() { document.getElementById('result-screen').style.display = 'none'; quitGameForce(); }
+    
+    // 頑健な終了処理（エラーがあっても必ず画面遷移する）
     function quitGameForce() {
-        isRunning = false; if(musicSource) { try{musicSource.stop()}catch(e){} } cancelAnimationFrame(animationId);
-        if(mode === 'REC') {
-            currentChart.data.sort((a,b) => a.time - b.time);
-            const idx = savedCharts.findIndex(c => c.id === currentChart.id);
-            if(idx >= 0) savedCharts[idx] = currentChart; else savedCharts.push(currentChart);
-            saveCharts();
-        }
+        try { isRunning = false; } catch(e){}
+        try { if(musicSource) musicSource.stop(); } catch(e){} 
+        try { cancelAnimationFrame(animationId); } catch(e){}
+        
+        try {
+            if(mode === 'REC') {
+                currentChart.data.sort((a,b) => a.time - b.time);
+                const idx = savedCharts.findIndex(c => c.id === currentChart.id);
+                if(idx >= 0) savedCharts[idx] = currentChart; else savedCharts.push(currentChart);
+                saveCharts();
+            }
+        } catch(e) { console.error("Save failed:", e); }
+
         document.getElementById('result-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('menu-screen').style.display = 'flex';
@@ -964,7 +955,7 @@
     function openImportModal() { document.getElementById('import-text').value = ""; document.getElementById('import-modal').style.display = 'flex'; }
     function executeImport() { try { const d = JSON.parse(document.getElementById('import-text').value); if(!d.id) throw 0; d.id = Date.now().toString(); savedCharts.push(d); saveCharts(); closeModal('import-modal'); alert("IMPORTED"); } catch(e) { alert("INVALID DATA"); } }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function restartGame(btn) { if(btn) btn.blur(); if(confirm("RESTART?")) { isRunning = false; cancelAnimationFrame(animationId); if(musicSource) try{musicSource.stop()}catch(e){} startGame(mode); } }
+    function restartGame(btn) { if(btn && typeof btn.blur === 'function') btn.blur(); if(confirm("RESTART?")) { isRunning = false; cancelAnimationFrame(animationId); if(musicSource) try{musicSource.stop()}catch(e){} startGame(mode); } }
     function restartGameFromResult() { startGame(mode); }
 </script>
 </body>
