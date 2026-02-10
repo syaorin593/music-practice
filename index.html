@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CYBER TIMELINE v14 (iPad Fix)</title>
+<title>CYBER TIMELINE v18 (Rank & Score)</title>
 <style>
     /* --- 全体設定 --- */
     body { 
@@ -24,48 +24,31 @@
         text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
     }
 
-    /* ローディング画面 */
-    #loading-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); z-index: 2000;
-        display: none; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .spinner {
-        width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00f3ff;
-        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
     /* エリア共通 */
     .config-area {
         background: rgba(255, 255, 255, 0.05); border: 1px solid #555;
         padding: 10px; border-radius: 8px; width: 90%; max-width: 600px;
         margin-bottom: 15px; text-align: center;
     }
-    .config-title { font-size: 12px; color: #aaa; margin-bottom: 5px; border-bottom:1px solid #444; padding-bottom:2px;}
+    .config-title { font-size: 12px; color: #aaa; margin-bottom: 5px; border-bottom:1px solid #444; padding-bottom:2px; font-weight:bold;}
 
-    /* メトロノーム設定 */
-    .metro-inputs { display: flex; justify-content: center; gap: 10px; margin: 5px 0; align-items: flex-end; flex-wrap: wrap; }
+    .flex-inputs { display: flex; justify-content: center; gap: 10px; margin: 5px 0; align-items: flex-end; flex-wrap: wrap; }
     .input-box { display: flex; flex-direction: column; align-items: flex-start; }
     .input-box label { font-size: 10px; color: #0f0; margin-bottom: 2px; }
     .input-box input, .input-box select { 
-        width: 80px; background: #000; border: 1px solid #0f0; 
+        width: 70px; background: #000; border: 1px solid #0f0; 
         color: #fff; padding: 5px; text-align: center; border-radius: 4px; height: 30px;
     }
-    .check-box { font-size: 12px; display:flex; align-items:center; height:30px; }
+    .check-box { font-size: 12px; display:flex; align-items:center; height:30px; cursor: pointer;}
+    .check-box input { margin-right: 5px; }
 
-    /* トリミング設定 */
-    .trim-inputs { display: flex; justify-content: center; gap: 15px; margin: 5px 0; align-items: center; }
-    .trim-box { display: flex; flex-direction: column; align-items: flex-start; }
-    .trim-box label { font-size: 10px; color: #00f3ff; margin-bottom: 2px; }
-    .trim-box input { 
-        width: 70px; background: #000; border: 1px solid #00f3ff; 
-        color: #fff; padding: 5px; text-align: center; border-radius: 4px; 
-    }
+    /* 色分け */
+    .metro-overlay label { color: #ff00ff; } .metro-overlay input { border-color: #ff00ff; color:#ff00ff; font-weight:bold; }
+    .rec-setting label { color: #00f3ff; } .rec-setting input { border-color: #00f3ff; }
 
     /* 譜面リスト */
     #chart-list {
-        width: 90%; max-width: 600px; height: 30vh; overflow-y: auto;
+        width: 90%; max-width: 600px; height: 25vh; overflow-y: auto;
         background: rgba(0, 20, 40, 0.6); border: 1px solid #00f3ff; 
         box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
         border-radius: 8px; padding: 10px; margin-bottom: 15px;
@@ -77,7 +60,6 @@
         border-left: 4px solid #444; transition: 0.2s;
     }
     .chart-item:hover { background: rgba(0, 243, 255, 0.1); border-left-color: #00f3ff; }
-    
     .chart-info { flex-grow: 1; text-align: left; cursor: pointer; }
     .chart-title { font-size: 16px; font-weight: bold; }
     .chart-sub { font-size: 11px; color: #888; }
@@ -92,12 +74,10 @@
     #create-btn { background: #00f3ff; box-shadow: 0 0 10px rgba(0,243,255,0.4); }
     #import-btn { background: #e0e0e0; color: #333; }
     #metro-btn { background: #0f0; box-shadow: 0 0 10px rgba(0,255,0,0.4); }
-    
     .main-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
 
     .btn-group { display: flex; gap: 5px; }
     .btn-mini { padding: 4px 8px; font-size: 10px; cursor: pointer; border: 1px solid #666; background: transparent; color: #aaa; border-radius: 4px; }
-    .btn-mini:hover { border-color: #fff; color: #fff; }
     .btn-del { border-color: #f05; color: #f05; }
     .btn-watch { border-color: #0f0; color: #0f0; }
 
@@ -105,9 +85,7 @@
     #game-screen {
         position: relative; width: 100vw; height: 100vh;
         background: #050510; display: none;
-        background-image: 
-            linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+        background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
         background-size: 50px 50px;
     }
 
@@ -115,8 +93,12 @@
         position: absolute; top: 0; width: 100%; padding: 10px;
         display: flex; justify-content: space-between; align-items: center;
         background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); 
-        z-index: 200; box-sizing: border-box; height: 50px;
+        z-index: 200; box-sizing: border-box; height: 60px;
     }
+
+    #score-display-area { text-align: right; }
+    #score-live { font-family: 'Courier New', monospace; font-size: 28px; color: #fff; text-shadow: 0 0 10px #00f3ff; font-weight: bold; line-height: 1;}
+    #rank-live { font-size: 14px; color: #aaa; font-weight: bold; }
 
     #timeline-track {
         position: absolute; top: 50%; left: 0; width: 100%; height: 160px;
@@ -135,7 +117,7 @@
         border: 4px solid #fff; border-radius: 50%;
         background: rgba(255,255,255,0.05);
         z-index: 10;
-        box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        box-shadow: 0 0 15px rgba(255,255,255,0.5);
     }
     .hit-anim { border-color: #00f3ff !important; background: rgba(0, 243, 255, 0.3) !important; transform: translate(-50%, -50%) scale(1.1) !important; box-shadow: 0 0 30px #00f3ff !important; }
     .hold-anim { border-color: #ffaa00 !important; background: rgba(255, 170, 0, 0.2) !important; }
@@ -166,16 +148,21 @@
         width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; background: transparent;
     }
 
+    /* 判定文字 */
     #judge-text {
         position: absolute; top: 25%; left: 20%; transform: translate(-50%, -50%);
         font-size: 50px; font-weight: 900; font-style: italic;
         text-shadow: 0 0 20px rgba(0,0,0,0.8); opacity: 0; z-index: 20; letter-spacing: 2px;
     }
 
-    #score-live {
-        font-family: 'Courier New', monospace; font-size: 28px; 
-        color: #fff; text-shadow: 0 0 10px #00f3ff; font-weight: bold;
+    /* コンボ表示 */
+    #combo-container {
+        position: absolute; top: 50%; left: 20%; transform: translate(-50%, -50%);
+        z-index: 5; text-align: center; pointer-events: none; opacity: 0;
+        transition: transform 0.05s;
     }
+    #combo-num { font-size: 40px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #00f3ff; line-height: 1; }
+    #combo-label { font-size: 12px; color: #00f3ff; font-weight: bold; letter-spacing: 2px; }
 
     /* リザルト */
     #result-screen {
@@ -184,13 +171,48 @@
         display: none; flex-direction: column; align-items: center; justify-content: center;
     }
     .result-box {
-        border: 1px solid #444; padding: 40px; width: 80%; max-width: 400px;
+        border: 1px solid #444; padding: 30px; width: 85%; max-width: 450px;
         text-align: center; background: #111;
-        box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); border-radius: 8px;
+        box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); border-radius: 12px;
+        position: relative;
     }
-    .res-score { font-size: 80px; font-weight: bold; color: #00f3ff; margin: 10px 0; font-family: 'Impact', sans-serif; }
-    .res-row { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid #333; color: #aaa; font-size: 14px; }
-    .res-val { color: #fff; font-weight: bold; font-size: 18px; }
+    /* ランク表示 */
+    #final-rank { font-size: 100px; font-weight: 900; line-height: 1; margin: 10px 0; text-shadow: 0 0 30px currentColor; }
+    
+    .rank-s { color: #ffd700; }
+    .rank-a { color: #ff4444; }
+    .rank-b { color: #00f3ff; }
+    .rank-c { color: #0f0; }
+    .rank-d { color: #888; }
+
+    /* フルコンボ演出 */
+    #special-banner {
+        font-size: 24px; font-weight: bold; margin-bottom: 10px;
+        background: linear-gradient(90deg, transparent, #fff, transparent);
+        -webkit-background-clip: text; color: transparent; 
+        text-shadow: 0 0 20px rgba(255,255,255,0.5); display: none;
+    }
+    .fc-style { color: #ffd700 !important; text-shadow: 0 0 20px #ffd700 !important; background: none !important; }
+    .ap-style { background: linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f) !important; -webkit-background-clip: text !important; text-shadow: 0 0 10px rgba(255,255,255,0.8) !important; animation: rainbow 2s linear infinite; }
+    @keyframes rainbow { 0%{filter: hue-rotate(0deg);} 100%{filter: hue-rotate(360deg);} }
+
+    .res-score { font-size: 50px; font-weight: bold; color: #fff; margin: 5px 0; font-family: 'Impact', sans-serif; }
+    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; text-align: left; padding: 0 20px; }
+    .res-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 2px; }
+    .res-label { font-size: 14px; color: #aaa; }
+    .res-val { font-size: 16px; font-weight: bold; }
+
+    /* ローディング */
+    #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 2000;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .spinner {
+        width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00f3ff;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* モーダル */
     .modal {
@@ -214,11 +236,11 @@
     </div>
 
     <div id="menu-screen">
-        <h1>CYBER TIMELINE v14</h1>
+        <h1>CYBER TIMELINE v18</h1>
         
         <div class="config-area">
-            <div class="config-title">METRONOME MODE (NO FILE)</div>
-            <div class="metro-inputs">
+            <div class="config-title" style="color:#0f0;">METRONOME MODE (NO FILE)</div>
+            <div class="flex-inputs">
                 <div class="input-box"><label>BPM</label><input type="number" id="metro-bpm" value="120" min="30" max="300"></div>
                 <div class="input-box"><label>TIME(s)</label><input type="number" id="metro-dur" value="60" min="10"></div>
                 <div class="input-box"><label>SOUND</label>
@@ -228,16 +250,23 @@
                         <option value="click">Click</option>
                     </select>
                 </div>
-                <div class="check-box"><input type="checkbox" id="metro-click" checked> Sound ON</div>
             </div>
             <button id="metro-btn" class="main-btn" onclick="startMetronome()">START METRONOME</button>
         </div>
 
-        <div class="config-area" style="border-color:#00f3ff;">
-            <div class="config-title" style="color:#00f3ff;">REC SETTING (FILE REQUIRED)</div>
-            <div class="trim-inputs">
-                <div class="trim-box"><label>START(s)</label><input type="number" id="trim-start" value="0" min="0" step="0.1"></div>
-                <div class="trim-box"><label>END(s)</label><input type="number" id="trim-end" value="0" min="0" step="0.1"></div>
+        <div class="config-area rec-setting" style="border-color:#00f3ff;">
+            <div class="config-title" style="color:#00f3ff;">REC / PLAY SETTING</div>
+            <div class="flex-inputs">
+                <div class="input-box"><label>START(s)</label><input type="number" id="trim-start" value="0" min="0" step="0.1"></div>
+                <div class="input-box"><label>END(s)</label><input type="number" id="trim-end" value="0" min="0" step="0.1"></div>
+            </div>
+            <div style="margin-top:10px; border-top:1px solid #444; padding-top:5px;">
+                <div style="font-size:10px; color:#ff00ff; margin-bottom:5px;">OVERLAY METRONOME</div>
+                <div class="flex-inputs metro-overlay">
+                    <label class="check-box"><input type="checkbox" id="overlay-enable">Active</label>
+                    <div class="input-box"><label>BPM</label><input type="number" id="overlay-bpm" value="120"></div>
+                    <div class="input-box"><label>OFFSET(s)</label><input type="number" id="overlay-offset" value="0.0" step="0.01"></div>
+                </div>
             </div>
             <button id="create-btn" class="main-btn" onclick="startCreateNew()">NEW CHART</button>
         </div>
@@ -247,7 +276,6 @@
         <div class="menu-actions">
             <button id="import-btn" class="main-btn" onclick="openImportModal()">IMPORT DATA</button>
         </div>
-        
         <button onclick="resetAllData()" style="background:none; border:none; color:#444; font-size:10px; margin-top:20px; cursor:pointer;">[RESET ALL DATA]</button>
         
         <input type="file" id="audio-input" accept=".mp3,audio/*" style="display:none">
@@ -259,12 +287,22 @@
                 <button class="btn-mini" onclick="quitGameForce()" style="padding:8px 15px; border-color:#555; color:#fff;">EXIT</button>
                 <button class="btn-mini" onclick="restartGame(this)" style="padding:8px 15px; border-color:#00f3ff; color:#00f3ff; margin-left:10px;">RETRY</button>
             </div>
-            <div id="mode-display" style="font-weight:bold; color:#00f3ff;">PLAY</div>
-            <div id="score-live">000000</div>
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div id="mode-display" style="font-weight:bold; color:#00f3ff;">PLAY</div>
+                <button id="btn-toggle-metro" class="btn-mini" onclick="toggleOverlayMetro(this)" style="margin-top:2px; font-size:10px; width:80px; display:none;">METRO: OFF</button>
+            </div>
+            <div id="score-display-area">
+                <div id="score-live">000000</div>
+                <div id="rank-live">RANK --</div>
+            </div>
         </div>
 
         <div id="timeline-track">
             <div id="judge-point"></div>
+            <div id="combo-container">
+                <div id="combo-num">0</div>
+                <div id="combo-label">COMBO</div>
+            </div>
             <div id="notes-container"></div>
         </div>
 
@@ -276,11 +314,19 @@
 
     <div id="result-screen">
         <div class="result-box">
-            <h2 style="color:#fff; margin-top:0;">COMPLETE</h2>
-            <div class="res-score" id="res-score">0</div>
-            <div class="res-row"><span>PERFECT</span><span class="res-val" style="color:#00f3ff" id="res-perf">0</span></div>
-            <div class="res-row"><span>GOOD</span><span class="res-val" style="color:#0f0" id="res-good">0</span></div>
-            <div class="res-row"><span>MISS</span><span class="res-val" style="color:#555" id="res-miss">0</span></div>
+            <h2 style="color:#fff; margin-top:0;">RESULT</h2>
+            <div id="special-banner">FULL COMBO!!</div>
+            <div id="final-rank" class="rank-s">S</div>
+            <div class="res-score" id="res-score">1000000</div>
+            
+            <div class="res-grid">
+                <div class="res-row"><span class="res-label">PERFECT</span><span class="res-val" style="color:#00f3ff" id="res-perf">0</span></div>
+                <div class="res-row"><span class="res-label">GREAT</span><span class="res-val" style="color:#f0f" id="res-great">0</span></div>
+                <div class="res-row"><span class="res-label">GOOD</span><span class="res-val" style="color:#0f0" id="res-good">0</span></div>
+                <div class="res-row"><span class="res-label">MISS</span><span class="res-val" style="color:#555" id="res-miss">0</span></div>
+                <div class="res-row" style="margin-top:10px;"><span class="res-label">MAX COMBO</span><span class="res-val" id="res-combo">0</span></div>
+            </div>
+            
             <br>
             <button class="main-btn" style="background:#00f3ff; color:#000;" onclick="restartGameFromResult()">RETRY</button>
             <button class="main-btn" style="background:#444; color:#fff;" onclick="closeResultToMenu()">MENU</button>
@@ -288,193 +334,146 @@
     </div>
 
     <div id="export-modal" class="modal">
-        <div class="modal-content">
-            <h3>EXPORT DATA</h3>
-            <textarea id="export-text" readonly></textarea>
-            <br><br>
-            <button class="btn-mini" onclick="copyToClipboard()" style="border-color:#00f3ff; color:#00f3ff;">COPY</button>
-            <button class="btn-mini" onclick="closeModal('export-modal')">CLOSE</button>
-        </div>
+        <div class="modal-content"><h3>EXPORT DATA</h3><textarea id="export-text" readonly></textarea><br><br><button class="btn-mini" onclick="copyToClipboard()" style="border-color:#00f3ff; color:#00f3ff;">COPY</button><button class="btn-mini" onclick="closeModal('export-modal')">CLOSE</button></div>
     </div>
     <div id="import-modal" class="modal">
-        <div class="modal-content">
-            <h3>IMPORT DATA</h3>
-            <textarea id="import-text" placeholder='Paste code here'></textarea>
-            <br><br>
-            <button class="btn-mini" onclick="executeImport()" style="border-color:#00f3ff; color:#00f3ff;">ADD</button>
-            <button class="btn-mini" onclick="closeModal('import-modal')">CLOSE</button>
-        </div>
+        <div class="modal-content"><h3>IMPORT DATA</h3><textarea id="import-text" placeholder='Paste code here'></textarea><br><br><button class="btn-mini" onclick="executeImport()" style="border-color:#00f3ff; color:#00f3ff;">ADD</button><button class="btn-mini" onclick="closeModal('import-modal')">CLOSE</button></div>
     </div>
     <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <h3>EDIT TITLE</h3>
-            <input type="text" id="edit-title-input" style="padding:10px; width:80%; background:#000; color:#fff; border:1px solid #444;">
-            <br><br>
-            <button class="btn-mini" onclick="saveEditedTitle()" style="border-color:#00f3ff; color:#00f3ff;">SAVE</button>
-            <button class="btn-mini" onclick="closeModal('edit-modal')">CANCEL</button>
-        </div>
+        <div class="modal-content"><h3>EDIT TITLE</h3><input type="text" id="edit-title-input" style="padding:10px; width:80%; background:#000; color:#fff; border:1px solid #444;"><br><br><button class="btn-mini" onclick="saveEditedTitle()" style="border-color:#00f3ff; color:#00f3ff;">SAVE</button><button class="btn-mini" onclick="closeModal('edit-modal')">CANCEL</button></div>
     </div>
 
 <script>
-    // === 設定 ===
-    const J_PERFECT = 0.08;
-    const J_GOOD = 0.18;
-    const SPEED_BASE = 400; // px/sec
+    // === 設定 (4段階判定) ===
+    const J_PERFECT = 0.05; // 100%
+    const J_GREAT = 0.10;   // 80%
+    const J_GOOD = 0.15;    // 50%
+    // それ以外はMISS
+    
+    const SPEED_BASE = 400; 
     const NOTE_SIZE = 90;
+    const MAX_SCORE = 1000000;
 
     // === 変数 ===
     let savedCharts = [];
     let currentChart = null;
     let audioCtx, musicBuffer, musicSource, gainNode;
     let isRunning = false;
-    let mode = ''; // REC, PLAY, AUTO, METRONOME
+    let mode = ''; 
     let startTime = 0;
     let animationId;
     
-    // 録音・プレイ用
     let recStartTime = 0;
     let isRecHolding = false;
     let activeNotes = [];
     let currentHoldNote = null;
     let lastNoteTime = 0;
     let isFadingOut = false;
-    let stats = { perfect: 0, good: 0, miss: 0, score: 0 };
-    let editingId = null;
     
-    // メトロノーム用
+    // スコア管理
+    let stats = { perfect: 0, great: 0, good: 0, miss: 0, combo: 0, maxCombo: 0, score: 0 };
+    let scorePerNote = 0;
+    
+    let editingId = null;
     let metroNextTime = 0;
-    let metroBpm = 120;
+    let isOverlayMetroEnabled = false;
 
     window.onload = () => {
         try {
-            const json = localStorage.getItem('cyber_timeline_v14');
+            const json = localStorage.getItem('cyber_timeline_v18');
             if (json) savedCharts = JSON.parse(json);
         } catch (e) { console.error(e); }
         renderChartList();
     };
 
     function saveCharts() {
-        localStorage.setItem('cyber_timeline_v14', JSON.stringify(savedCharts));
+        localStorage.setItem('cyber_timeline_v18', JSON.stringify(savedCharts));
         renderChartList();
     }
-    
-    function resetAllData() {
-        if(confirm("全データを削除しますか？")) {
-            localStorage.removeItem('cyber_timeline_v14');
-            savedCharts = [];
-            renderChartList();
-        }
-    }
+    function resetAllData() { if(confirm("全データ削除しますか？")) { localStorage.removeItem('cyber_timeline_v18'); savedCharts = []; renderChartList(); } }
 
     const audioInput = document.getElementById('audio-input');
     const loadingOverlay = document.getElementById('loading-overlay');
 
-    // ★ iPad対応: 音声コンテキストをボタンクリック直後に初期化
     async function initAudioCtx() {
-        if(!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if(audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if(audioCtx.state === 'suspended') await audioCtx.resume();
     }
-
     async function loadAudio(file) {
-        // コンテキストはinitAudioCtxで初期化済み想定だが念のため
         if(!audioCtx) await initAudioCtx();
-        
         const buf = await file.arrayBuffer();
         musicBuffer = await audioCtx.decodeAudioData(buf);
     }
 
-    // === メトロノームモード ===
+    // === メトロノーム ===
     function startMetronome() {
         initAudioCtx().then(() => {
             const bpm = parseInt(document.getElementById('metro-bpm').value) || 120;
             const dur = parseInt(document.getElementById('metro-dur').value) || 60;
-            metroBpm = bpm;
-            
-            // 仮想譜面を作成
             const notes = [];
             const interval = 60 / bpm;
-            for(let t = 0; t < dur; t += interval) {
-                notes.push({ time: t, duration: 0, type: 'tap' });
-            }
+            for(let t = 0; t < dur; t += interval) notes.push({ time: t, duration: 0, type: 'tap' });
 
             currentChart = {
-                id: 'metro', title: `METRO BPM:${bpm} (${dur}s)`,
-                data: notes, trimStart: 0, trimEnd: dur,
-                isMetro: true, bpm: bpm
+                id: 'metro', title: `METRO BPM:${bpm}`, data: notes, 
+                trimStart: 0, trimEnd: dur, isMetro: true, bpm: bpm
             };
-            
-            musicBuffer = null;
-            metroNextTime = 0;
-            
+            musicBuffer = null; metroNextTime = 0; isOverlayMetroEnabled = true;
             startGame('METRONOME');
         });
     }
 
     // === 録音・プレイ ===
     function startCreateNew() {
-        // ★ iPad対応: まず音声機能をアクティブ化
-        initAudioCtx();
-
+        initAudioCtx(); 
         const start = parseFloat(document.getElementById('trim-start').value) || 0;
         const end = parseFloat(document.getElementById('trim-end').value) || 0;
+        const ovEnable = document.getElementById('overlay-enable').checked;
+        const ovBpm = parseInt(document.getElementById('overlay-bpm').value) || 120;
+        const ovOffset = parseFloat(document.getElementById('overlay-offset').value) || 0;
 
         audioInput.value = "";
         audioInput.onchange = async (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            
-            // ローディング表示
             loadingOverlay.style.display = 'flex';
             try {
                 await loadAudio(file);
                 currentChart = {
-                    id: Date.now().toString(),
-                    title: file.name.replace(/\.[^/.]+$/, ""),
-                    data: [],
-                    trimStart: start, trimEnd: end
+                    id: Date.now().toString(), title: file.name.replace(/\.[^/.]+$/, ""), data: [],
+                    trimStart: start, trimEnd: end, overlayMetro: ovEnable, overlayBpm: ovBpm, overlayOffset: ovOffset
                 };
                 loadingOverlay.style.display = 'none';
                 startGame('REC');
-            } catch(err) {
-                loadingOverlay.style.display = 'none';
-                alert("読み込みエラー: " + err + "\nMP3ファイルか確認してください。");
-            }
+            } catch(err) { loadingOverlay.style.display = 'none'; alert("Error: " + err); }
         };
         audioInput.click();
     }
 
     function startPlay(id, playMode = 'PLAY') {
-        // ★ iPad対応: 音声機能アクティブ化
-        initAudioCtx();
-
+        initAudioCtx(); 
         currentChart = savedCharts.find(c => c.id === id);
         if(!currentChart) return;
         
         document.getElementById('trim-start').value = currentChart.trimStart || 0;
         document.getElementById('trim-end').value = currentChart.trimEnd || 0;
+        document.getElementById('overlay-enable').checked = currentChart.overlayMetro || false;
+        document.getElementById('overlay-bpm').value = currentChart.overlayBpm || 120;
+        document.getElementById('overlay-offset').value = currentChart.overlayOffset || 0.0;
 
         const msg = playMode === 'AUTO' ? "プレビュー(自動再生)" : "プレイ";
-
         setTimeout(() => {
-            if(confirm(`「${currentChart.title}」を${msg}します。\nMP3ファイルを選択してください。`)) {
+            if(confirm(`「${currentChart.title}」を${msg}します。\nMP3を選択してください。`)) {
                 audioInput.value = "";
                 audioInput.onchange = async (e) => {
                     const file = e.target.files[0];
                     if(!file) return;
-                    
                     loadingOverlay.style.display = 'flex';
                     try {
                         await loadAudio(file);
                         loadingOverlay.style.display = 'none';
                         startGame(playMode);
-                    } catch(err) {
-                        loadingOverlay.style.display = 'none';
-                        alert("読み込みエラー: " + err);
-                    }
+                    } catch(err) { loadingOverlay.style.display = 'none'; alert("Error: " + err); }
                 };
                 audioInput.click();
             }
@@ -494,7 +493,6 @@
         else if(mode === 'METRONOME') { disp.textContent = "⏱ METRO"; disp.style.color = "#0f0"; }
         else { disp.textContent = "▶ PLAY"; disp.style.color = "#00f3ff"; }
 
-        // フラグリセット
         if(currentChart.data) {
             currentChart.data.forEach(d => { delete d._spawned; });
             if(currentChart.data.length > 0) {
@@ -504,12 +502,23 @@
         }
 
         resetState();
-        
         startTime = audioCtx.currentTime;
         
         if(mode === 'METRONOME') {
+            document.getElementById('btn-toggle-metro').style.display = 'none';
             metroNextTime = 0;
         } else {
+            // オーバーレイ初期化
+            document.getElementById('btn-toggle-metro').style.display = 'inline-block';
+            isOverlayMetroEnabled = currentChart.overlayMetro || false;
+            updateMetroBtn();
+            if(currentChart.overlayBpm) {
+                const interval = 60.0 / currentChart.overlayBpm;
+                const offset = currentChart.overlayOffset || 0;
+                let nextBeat = offset;
+                while(nextBeat < currentChart.trimStart) nextBeat += interval;
+                metroNextTime = nextBeat - currentChart.trimStart; 
+            }
             playMusic();
         }
         
@@ -517,93 +526,43 @@
         loop();
     }
 
-    function restartGame(btn) {
-        if(btn) btn.blur(); 
-        if(confirm("最初からやり直しますか？")) {
-            isRunning = false;
-            cancelAnimationFrame(animationId);
-            if(musicSource) { try{musicSource.stop()}catch(e){} }
-            startGame(mode);
-        }
-    }
-    
-    function restartGameFromResult() { startGame(mode); }
-
     function resetState() {
         document.getElementById('notes-container').innerHTML = '';
         activeNotes = [];
         currentHoldNote = null;
         isRecHolding = false;
         isFadingOut = false;
-        stats = { perfect: 0, good: 0, miss: 0, score: 0 };
+        stats = { perfect: 0, great: 0, good: 0, miss: 0, combo: 0, maxCombo: 0, score: 0 };
+        
+        // スコア単価計算
+        const totalNotes = currentChart.data.length || 1;
+        scorePerNote = MAX_SCORE / totalNotes;
+        
         updateScoreUI();
+        document.getElementById('combo-container').style.opacity = 0;
     }
 
-    // --- 音声再生系 ---
-    function playMusic() {
-        if(musicSource) { try{musicSource.stop()}catch(e){} }
-        musicSource = audioCtx.createBufferSource();
-        musicSource.buffer = musicBuffer;
-        gainNode = audioCtx.createGain();
-        musicSource.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+    function updateScoreUI() {
+        document.getElementById('score-live').textContent = Math.round(stats.score).toString().padStart(7, '0');
         
-        const tStart = currentChart.trimStart || 0;
-        let tEnd = currentChart.trimEnd || 0;
-        if(tEnd === 0 || tEnd > musicBuffer.duration) tEnd = musicBuffer.duration;
-        const duration = tEnd - tStart;
-
-        musicSource.start(0, tStart, duration);
-    }
-
-    function playClick(time) {
-        const soundType = document.getElementById('metro-sound').value;
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.connect(g); g.connect(audioCtx.destination);
+        // 現在ランク計算
+        let rank = 'D';
+        const possibleScore = (stats.perfect + stats.great + stats.good + stats.miss + activeNotes.length) * scorePerNote; 
+        // 簡易: 現在スコア / (現在までのノーツ数 * 満点) ... ではなく、最終スコア予測で出すか、単純蓄積で出すか。
+        // ここでは単純蓄積だと最初はDなので、最終スコアを想定したパーセンテージを出すのが一般的だが、
+        // 簡易的に「現在の達成率」を表示するなら：
+        // 達成率 = stats.score / MAX_SCORE * 100
+        const percent = (stats.score / MAX_SCORE) * 100;
         
-        if(soundType === 'wood') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, time);
-            osc.frequency.exponentialRampToValueAtTime(300, time + 0.03);
-            g.gain.setValueAtTime(0.7, time);
-            g.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
-            osc.start(time); osc.stop(time + 0.05);
-        }
-        else if(soundType === 'beep') {
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(1200, time);
-            g.gain.setValueAtTime(0.1, time);
-            g.gain.setValueAtTime(0, time + 0.05);
-            osc.start(time); osc.stop(time + 0.05);
-        }
-        else {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1500, time);
-            osc.frequency.exponentialRampToValueAtTime(100, time + 0.02);
-            g.gain.setValueAtTime(0.5, time);
-            g.gain.exponentialRampToValueAtTime(0.01, time + 0.02);
-            osc.start(time); osc.stop(time + 0.02);
-        }
-    }
-
-    function quitGameForce() {
-        isRunning = false;
-        if(musicSource) { try{musicSource.stop()}catch(e){} }
-        cancelAnimationFrame(animationId);
+        if(percent >= 95) rank = 'S';
+        else if(percent >= 80) rank = 'A';
+        else if(percent >= 60) rank = 'B';
+        else if(percent >= 40) rank = 'C';
         
-        if(mode === 'REC') {
-            currentChart.data.sort((a,b) => a.time - b.time);
-            const idx = savedCharts.findIndex(c => c.id === currentChart.id);
-            if(idx >= 0) savedCharts[idx] = currentChart;
-            else savedCharts.push(currentChart);
-            saveCharts();
-        }
-
-        document.getElementById('result-screen').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'none';
-        document.getElementById('menu-screen').style.display = 'flex';
-        renderChartList();
+        const rankEl = document.getElementById('rank-live');
+        rankEl.textContent = `RANK ${rank}`;
+        rankEl.className = `rank-${rank.toLowerCase()}`;
+        if(stats.score === 0) rankEl.textContent = "RANK --";
     }
 
     // === ループ ===
@@ -613,42 +572,43 @@
         const gameTime = now - startTime;
         
         // メトロノーム音
-        if(mode === 'METRONOME' && document.getElementById('metro-click').checked) {
+        let interval = 0; let endLimit = 99999;
+        if(mode === 'METRONOME') {
             const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
-            const interval = 60.0 / inputBpm;
+            interval = 60.0 / inputBpm; endLimit = currentChart.trimEnd;
+        } else if(currentChart.overlayMetro) {
+            const bpm = currentChart.overlayBpm || 120; interval = 60.0 / bpm;
+            let tEnd = currentChart.trimEnd || 0; if(tEnd===0 && musicBuffer) tEnd = musicBuffer.duration;
+            endLimit = tEnd - currentChart.trimStart;
+        }
+        if(interval > 0) {
             while (metroNextTime < gameTime + 0.1) {
-                if(metroNextTime <= currentChart.trimEnd) {
-                    playClick(startTime + metroNextTime);
+                if(metroNextTime <= endLimit) {
+                    if(mode === 'METRONOME' || isOverlayMetroEnabled) playClick(startTime + metroNextTime);
                 }
                 metroNextTime += interval;
             }
         }
 
-        // --- ノーツ描画 ---
+        // ノーツ処理
         const pxPerSec = SPEED_BASE * 1.2; 
         const judgeX = window.innerWidth * 0.2;
 
         if(mode === 'METRONOME') {
             const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
-            const interval = 60.0 / inputBpm;
-            const lookAheadTime = (window.innerWidth - judgeX) / pxPerSec;
-            
-            const nextNoteIdx = Math.ceil((gameTime + lookAheadTime) / interval);
-            const nextNoteTime = nextNoteIdx * interval;
-            const nid = `m-${nextNoteIdx}`;
-            
-            if(!document.getElementById(nid) && nextNoteTime <= currentChart.trimEnd) {
-                if(nextNoteTime < gameTime + lookAheadTime + 0.1) {
-                    createNoteElement({ time: nextNoteTime, duration: 0, type: 'tap' }, nid);
-                }
+            const mInt = 60.0 / inputBpm;
+            const lookAhead = (window.innerWidth - judgeX) / pxPerSec;
+            const nextIdx = Math.ceil((gameTime + lookAhead) / mInt);
+            const nextTime = nextIdx * mInt;
+            const nid = `m-${nextIdx}`;
+            if(!document.getElementById(nid) && nextTime <= currentChart.trimEnd && nextTime < gameTime + lookAhead + 0.1) {
+                createNoteElement({ time: nextTime, duration: 0, type: 'tap' }, nid);
             }
-        }
-        else if(mode !== 'REC') { 
+        } else if(mode !== 'REC') {
             const lookAhead = (window.innerWidth - judgeX) / pxPerSec;
             currentChart.data.forEach(d => {
                 if(!d._spawned && d.time < gameTime + lookAhead + 1.5 && d.time > gameTime - 1) {
-                    createNoteElement(d);
-                    d._spawned = true;
+                    createNoteElement(d); d._spawned = true;
                 }
             });
         }
@@ -662,23 +622,15 @@
             n.el.style.left = n.data.type === 'hold' ? `${x + (width/2) - (NOTE_SIZE/2)}px` : `${x}px`;
             n.el.style.width = `${width}px`;
 
-            // Auto/Metro
             if(mode === 'AUTO' || mode === 'METRONOME') {
                 if(!n.processed) {
-                    if(n.data.type === 'tap' && diff <= 0) {
-                        triggerHit(n, 'PERFECT', mode !== 'METRONOME'); 
-                    }
-                    if(n.data.type === 'hold') {
-                        if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) startHold(n, mode !== 'METRONOME');
-                    }
+                    if(n.data.type === 'tap' && diff <= 0) triggerHit(n, 'PERFECT', mode!=='METRONOME');
+                    if(n.data.type === 'hold') if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) startHold(n, mode!=='METRONOME');
                 }
                 if(n.data.type === 'hold' && currentHoldNote && currentHoldNote.uid === n.uid) {
-                    const endTime = n.data.time + n.data.duration;
-                    if(gameTime >= endTime) completeHold(n, mode !== 'METRONOME');
+                    if(gameTime >= n.data.time + n.data.duration) completeHold(n, mode!=='METRONOME');
                 }
-            }
-            // Manual
-            else {
+            } else {
                 if(!n.processed) {
                     if(n.data.type === 'tap' && diff < -J_GOOD) triggerMiss(n);
                     if(n.data.type === 'hold' && diff < -J_GOOD && (!currentHoldNote || currentHoldNote.uid !== n.uid)) triggerMiss(n);
@@ -688,23 +640,28 @@
             if(n.processed) {
                 if(n.data.type === 'tap' && diff < -0.1) removeNote(idx);
                 if(n.data.type === 'hold' && gameTime > n.data.time + n.data.duration + 0.2) removeNote(idx);
-            } else if(x + width < -100) {
-                removeNote(idx);
-            }
+            } else if(x + width < -100) removeNote(idx);
         });
 
         // 終了判定
         let finishTime = lastNoteTime;
-        if(mode === 'METRONOME') finishTime = currentChart.trimEnd;
-        else if(mode === 'PLAY' && currentChart.trimEnd > 0) finishTime = currentChart.trimEnd - currentChart.trimStart; 
+        let tEnd = currentChart.trimEnd || 0;
+        if(tEnd === 0 && musicBuffer) tEnd = musicBuffer.duration;
+        else if(tEnd === 0 && mode === 'METRONOME') tEnd = currentChart.trimEnd;
+        const songDuration = tEnd - currentChart.trimStart;
 
-        if((gameTime > finishTime + 2.0 && !isFadingOut)) {
-            if(musicSource && gainNode) {
-                isFadingOut = true;
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
-                setTimeout(showResult, 1200);
-            } else {
-                showResult();
+        if (mode === 'REC') {
+            if (gameTime > songDuration && !isFadingOut) showResult(); 
+        } else {
+            let autoExitTime = 99999;
+            if(currentChart.data && currentChart.data.length > 0) autoExitTime = lastNoteTime + 2.0;
+            const actualEndTime = Math.min(songDuration, autoExitTime);
+            if (gameTime > actualEndTime && !isFadingOut) {
+                if(musicSource && gainNode) {
+                    isFadingOut = true;
+                    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
+                    setTimeout(showResult, 1200);
+                } else showResult();
             }
         }
 
@@ -720,34 +677,41 @@
         activeNotes.push({ uid: Date.now()+Math.random(), data: data, el: el, processed: false });
     }
     function removeNote(idx) {
-        const n = activeNotes[idx];
-        if(n && n.el) n.el.remove();
-        activeNotes.splice(idx, 1);
+        const n = activeNotes[idx]; if(n && n.el) n.el.remove(); activeNotes.splice(idx, 1);
     }
 
-    // === 判定 ===
+    // === 判定ロジック (4段階) ===
     function triggerHit(note, quality, sound=true) {
-        note.processed = true;
-        note.el.remove();
+        note.processed = true; note.el.remove();
+        let point = 0;
         if(quality === 'PERFECT') {
-            stats.perfect++;
-            stats.score += 1000;
+            stats.perfect++; point = 100;
             showJudge("PERFECT", "#00f3ff");
+        } else if(quality === 'GREAT') {
+            stats.great++; point = 80;
+            showJudge("GREAT", "#f0f");
         } else {
-            stats.good++;
-            stats.score += 500;
+            stats.good++; point = 50;
             showJudge("GOOD", "#0f0");
         }
-        if(sound) playSE(quality === 'PERFECT' ? 800 : 600);
+        
+        // スコア加算
+        stats.score += scorePerNote * (point / 100);
+        
+        // コンボ
+        stats.combo++;
+        if(stats.combo > stats.maxCombo) stats.maxCombo = stats.combo;
+        updateComboUI();
         updateScoreUI();
+        
+        if(sound) playSE(quality === 'PERFECT' ? 1000 : (quality==='GREAT' ? 800 : 600));
     }
 
     function triggerMiss(note) {
-        note.processed = true;
-        note.el.style.opacity = 0.3;
-        stats.miss++;
+        note.processed = true; note.el.style.opacity = 0.3;
+        stats.miss++; stats.combo = 0;
         showJudge("MISS", "#555");
-        updateScoreUI();
+        updateComboUI(); updateScoreUI();
     }
 
     function startHold(note, sound=true) {
@@ -757,28 +721,23 @@
         if(sound) playSE(600);
     }
     function completeHold(note, sound=true) {
-        note.processed = true;
-        note.el.style.opacity = 0;
+        note.processed = true; note.el.style.opacity = 0;
         currentHoldNote = null;
-        stats.perfect++;
-        stats.score += 1000;
+        stats.perfect++; 
+        stats.score += scorePerNote; // Holdは基本Perfect扱い
+        stats.combo++;
+        if(stats.combo > stats.maxCombo) stats.maxCombo = stats.combo;
+        
         document.getElementById('judge-point').classList.remove('hold-anim');
         showJudge("PERFECT", "#00f3ff");
         if(sound) playSE(1000);
-        updateScoreUI();
-    }
-
-    function updateScoreUI() {
-        document.getElementById('score-live').textContent = stats.score.toString().padStart(6, '0');
+        updateScoreUI(); updateComboUI();
     }
 
     // === 入力 ===
     const inputStart = (e) => {
         if(!isRunning || mode === 'AUTO' || mode === 'METRONOME') return;
-        if(e.type === 'keydown') {
-            if(e.code !== 'Space') return;
-            if(e.repeat) return; 
-        }
+        if(e.type === 'keydown') { if(e.code !== 'Space') return; if(e.repeat) return; }
         if(e.type === 'touchstart') e.preventDefault();
 
         const now = audioCtx.currentTime - startTime;
@@ -786,13 +745,9 @@
         jp.classList.remove('hit-anim'); void jp.offsetWidth; jp.classList.add('hit-anim');
 
         if(mode === 'REC') {
-            if(isRecHolding) return;
-            recStartTime = now;
-            isRecHolding = true;
-            playSE(600);
+            if(isRecHolding) return; recStartTime = now; isRecHolding = true; playSE(600);
         } else {
-            let target = null;
-            let minDiff = 999;
+            let target = null; let minDiff = 999;
             activeNotes.forEach(n => {
                 if(n.processed) return;
                 const diff = Math.abs(n.data.time - now);
@@ -802,6 +757,7 @@
             if(target) {
                 if(target.data.type === 'tap') {
                     if(minDiff <= J_PERFECT) triggerHit(target, 'PERFECT');
+                    else if(minDiff <= J_GREAT) triggerHit(target, 'GREAT');
                     else triggerHit(target, 'GOOD');
                 } else {
                     startHold(target);
@@ -824,9 +780,9 @@
         } 
         else if(mode === 'PLAY' && currentHoldNote) {
             const endTime = currentHoldNote.data.time + currentHoldNote.data.duration;
-            const diff = now - endTime; 
-            if (Math.abs(diff) < J_GOOD) completeHold(currentHoldNote);
-            else if (diff < -J_GOOD) {
+            const diff = Math.abs(now - endTime);
+            if (diff < J_GOOD) completeHold(currentHoldNote);
+            else if (now < endTime - J_GOOD) { // 早離し
                 triggerMiss(currentHoldNote);
                 currentHoldNote = null;
                 document.getElementById('judge-point').classList.remove('hold-anim');
@@ -842,93 +798,141 @@
     gs.addEventListener('mousedown', inputStart);
     gs.addEventListener('mouseup', inputEnd);
 
-    // === UI ===
+    // === UI演出 ===
     function showJudge(text, color) {
         const el = document.getElementById('judge-text');
-        el.textContent = text;
-        el.style.color = color;
-        el.style.opacity = 1;
-        el.animate([{opacity:1, transform:"translate(-50%,-50%) scale(1.5)"}, {opacity:0, transform:"translate(-50%,-50%) scale(1.0)"}], {duration:200, fill:'forwards'});
+        el.textContent = text; el.style.color = color; el.style.opacity = 1;
+        el.animate([{opacity:1, transform:"translate(-50%,-50%) scale(1.5)"}, {opacity:0, transform:"translate(-50%,-50%) scale(1.0)"}], {duration:250, fill:'forwards'});
     }
-    
+    function updateComboUI() {
+        const c = document.getElementById('combo-container');
+        const n = document.getElementById('combo-num');
+        if(stats.combo > 1) {
+            n.textContent = stats.combo;
+            c.style.opacity = 1;
+            c.style.transform = "translate(-50%, -50%) scale(1.2)";
+            setTimeout(() => c.style.transform = "translate(-50%, -50%) scale(1.0)", 50);
+        } else {
+            c.style.opacity = 0;
+        }
+    }
+
+    function toggleOverlayMetro(btn) {
+        if(btn) btn.blur();
+        isOverlayMetroEnabled = !isOverlayMetroEnabled;
+        updateMetroBtn();
+    }
+    function updateMetroBtn() {
+        const btn = document.getElementById('btn-toggle-metro');
+        if(isOverlayMetroEnabled) { btn.textContent = "METRO: ON"; btn.style.color = "#0f0"; btn.style.borderColor = "#0f0"; }
+        else { btn.textContent = "METRO: OFF"; btn.style.color = "#555"; btn.style.borderColor = "#555"; }
+    }
+
+    function playMusic() {
+        if(musicSource) { try{musicSource.stop()}catch(e){} }
+        musicSource = audioCtx.createBufferSource();
+        musicSource.buffer = musicBuffer;
+        gainNode = audioCtx.createGain();
+        musicSource.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        const tStart = currentChart.trimStart || 0;
+        let tEnd = currentChart.trimEnd || 0;
+        if(tEnd === 0 || tEnd > musicBuffer.duration) tEnd = musicBuffer.duration;
+        musicSource.start(0, tStart, tEnd - tStart);
+    }
+    function playClick(time) {
+        const soundType = document.getElementById('metro-sound').value;
+        const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        if(soundType === 'wood') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, time); osc.frequency.exponentialRampToValueAtTime(300, time+0.03);
+            g.gain.setValueAtTime(0.7, time); g.gain.exponentialRampToValueAtTime(0.01, time+0.05);
+        } else if(soundType === 'beep') {
+            osc.type = 'square'; osc.frequency.setValueAtTime(1200, time);
+            g.gain.setValueAtTime(0.1, time); g.gain.setValueAtTime(0, time+0.05);
+        } else {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(1500, time); osc.frequency.exponentialRampToValueAtTime(100, time+0.02);
+            g.gain.setValueAtTime(0.5, time); g.gain.exponentialRampToValueAtTime(0.01, time+0.02);
+        }
+        osc.start(time); osc.stop(time+0.05);
+    }
     function playSE(f) {
-        if(!audioCtx) return;
         const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
         o.connect(g); g.connect(audioCtx.destination);
-        o.frequency.setValueAtTime(f, audioCtx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
-        g.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.1);
+        o.frequency.setValueAtTime(f, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
+        g.gain.setValueAtTime(0.3, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.1);
         o.start(); o.stop(audioCtx.currentTime+0.1);
     }
 
+    // === リザルト ===
     function showResult() {
-        isRunning = false;
-        cancelAnimationFrame(animationId);
-        
-        let score = 0;
-        const total = currentChart.data.length;
-        if(total > 0) score = Math.round(((stats.perfect*100 + stats.good*50)/(total*100))*100);
-        else if(mode === 'METRONOME') score = 100;
-        
-        document.getElementById('res-score').textContent = score;
+        isRunning = false; cancelAnimationFrame(animationId);
+        document.getElementById('res-score').textContent = Math.round(stats.score);
         document.getElementById('res-perf').textContent = stats.perfect;
+        document.getElementById('res-great').textContent = stats.great;
         document.getElementById('res-good').textContent = stats.good;
         document.getElementById('res-miss').textContent = stats.miss;
+        document.getElementById('res-combo').textContent = stats.maxCombo;
+        
+        // ランク & 演出
+        const percent = (stats.score / MAX_SCORE) * 100;
+        let rank = 'D'; let color = '#888';
+        if(percent >= 95) { rank = 'S'; color = '#ffd700'; }
+        else if(percent >= 80) { rank = 'A'; color = '#ff4444'; }
+        else if(percent >= 60) { rank = 'B'; color = '#00f3ff'; }
+        else if(percent >= 40) { rank = 'C'; color = '#0f0'; }
+        
+        const rEl = document.getElementById('final-rank');
+        rEl.textContent = rank; rEl.className = `rank-${rank.toLowerCase()}`;
+        
+        const banner = document.getElementById('special-banner');
+        banner.style.display = 'none'; banner.className = '';
+        if(stats.miss === 0) {
+            banner.style.display = 'block';
+            if(stats.great === 0 && stats.good === 0) {
+                banner.textContent = "ALL PERFECT!!"; banner.className = 'ap-style';
+            } else {
+                banner.textContent = "FULL COMBO!!"; banner.className = 'fc-style';
+            }
+        }
+
         document.getElementById('result-screen').style.display = 'flex';
     }
-    
-    function closeResultToMenu() {
+    function closeResultToMenu() { document.getElementById('result-screen').style.display = 'none'; quitGameForce(); }
+    function quitGameForce() {
+        isRunning = false; if(musicSource) { try{musicSource.stop()}catch(e){} } cancelAnimationFrame(animationId);
+        if(mode === 'REC') {
+            currentChart.data.sort((a,b) => a.time - b.time);
+            const idx = savedCharts.findIndex(c => c.id === currentChart.id);
+            if(idx >= 0) savedCharts[idx] = currentChart; else savedCharts.push(currentChart);
+            saveCharts();
+        }
         document.getElementById('result-screen').style.display = 'none';
-        quitGameForce();
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+        renderChartList();
     }
 
-    // === リスト & 編集 ===
+    // === リスト他 ===
     function renderChartList() {
-        const list = document.getElementById('chart-list');
-        list.innerHTML = '';
-        if(savedCharts.length === 0) { list.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">NO CHARTS</div>'; return; }
+        const list = document.getElementById('chart-list'); list.innerHTML = '';
+        if(savedCharts.length === 0) { list.innerHTML = '<div style="padding:20px;text-align:center;color:#aaa;">NO CHARTS</div>'; return; }
         savedCharts.forEach(c => {
-            const div = document.createElement('div');
-            div.className = 'chart-item';
-            div.innerHTML = `
-                <div class="chart-info" onclick="startPlay('${c.id}', 'PLAY')">
-                    <div class="chart-title">${c.title}</div>
-                    <div class="chart-sub">Notes: ${c.data.length} (${c.trimStart||0}s - ${c.trimEnd||'End'})</div>
-                </div>
-                <div class="btn-group">
-                    <button class="btn-mini btn-watch" onclick="startPlay('${c.id}', 'AUTO')">WATCH</button>
-                    <button class="btn-mini" onclick="openEditModal('${c.id}')">EDIT</button>
-                    <button class="btn-mini" onclick="openExportModal('${c.id}')">EXP</button>
-                    <button class="btn-mini btn-del" onclick="deleteChart('${c.id}')">DEL</button>
-                </div>
-            `;
+            const div = document.createElement('div'); div.className = 'chart-item';
+            div.innerHTML = `<div class="chart-info" onclick="startPlay('${c.id}')"><div class="chart-title">${c.title}</div><div class="chart-sub">Notes: ${c.data.length}</div></div><div class="btn-group"><button class="btn-mini btn-watch" onclick="startPlay('${c.id}', 'AUTO')">WATCH</button><button class="btn-mini" onclick="openEditModal('${c.id}')">EDIT</button><button class="btn-mini" onclick="openExportModal('${c.id}')">EXP</button><button class="btn-mini btn-del" onclick="deleteChart('${c.id}')">DEL</button></div>`;
             list.appendChild(div);
         });
     }
-
-    function openEditModal(id) {
-        editingId = id;
-        const c = savedCharts.find(x => x.id === id);
-        document.getElementById('edit-title-input').value = c.title;
-        document.getElementById('edit-modal').style.display = 'flex';
-    }
-    function saveEditedTitle() {
-        const val = document.getElementById('edit-title-input').value;
-        if(val) {
-            const c = savedCharts.find(x => x.id === editingId);
-            c.title = val;
-            saveCharts();
-        }
-        closeModal('edit-modal');
-    }
-
     function deleteChart(id) { if(confirm("DELETE?")) { savedCharts = savedCharts.filter(c => c.id !== id); saveCharts(); } }
+    function openEditModal(id) { editingId = id; document.getElementById('edit-title-input').value = savedCharts.find(x=>x.id===id).title; document.getElementById('edit-modal').style.display = 'flex'; }
+    function saveEditedTitle() { const v = document.getElementById('edit-title-input').value; if(v) { savedCharts.find(x=>x.id===editingId).title=v; saveCharts(); } closeModal('edit-modal'); }
     function openExportModal(id) { document.getElementById('export-text').value = JSON.stringify(savedCharts.find(x => x.id === id)); document.getElementById('export-modal').style.display = 'flex'; }
     function copyToClipboard() { document.getElementById('export-text').select(); document.execCommand('copy'); alert("COPIED"); }
     function openImportModal() { document.getElementById('import-text').value = ""; document.getElementById('import-modal').style.display = 'flex'; }
     function executeImport() { try { const d = JSON.parse(document.getElementById('import-text').value); if(!d.id) throw 0; d.id = Date.now().toString(); savedCharts.push(d); saveCharts(); closeModal('import-modal'); alert("IMPORTED"); } catch(e) { alert("INVALID DATA"); } }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function restartGame(btn) { if(btn) btn.blur(); if(confirm("RESTART?")) { isRunning = false; cancelAnimationFrame(animationId); if(musicSource) try{musicSource.stop()}catch(e){} startGame(mode); } }
+    function restartGameFromResult() { startGame(mode); }
 </script>
 </body>
 </html>
