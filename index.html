@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CYBER TIMELINE v10</title>
+<title>CYBER TIMELINE v13</title>
 <style>
     /* --- 全体設定 --- */
     body { 
@@ -24,12 +24,25 @@
         text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
     }
 
-    /* トリミング設定 */
-    #trim-section {
+    /* エリア共通 */
+    .config-area {
         background: rgba(255, 255, 255, 0.05); border: 1px solid #555;
         padding: 10px; border-radius: 8px; width: 90%; max-width: 600px;
-        margin-bottom: 10px; text-align: center;
+        margin-bottom: 15px; text-align: center;
     }
+    .config-title { font-size: 12px; color: #aaa; margin-bottom: 5px; border-bottom:1px solid #444; padding-bottom:2px;}
+
+    /* メトロノーム設定 */
+    .metro-inputs { display: flex; justify-content: center; gap: 10px; margin: 5px 0; align-items: flex-end; flex-wrap: wrap; }
+    .input-box { display: flex; flex-direction: column; align-items: flex-start; }
+    .input-box label { font-size: 10px; color: #0f0; margin-bottom: 2px; }
+    .input-box input, .input-box select { 
+        width: 80px; background: #000; border: 1px solid #0f0; 
+        color: #fff; padding: 5px; text-align: center; border-radius: 4px; height: 30px;
+    }
+    .check-box { font-size: 12px; display:flex; align-items:center; height:30px; }
+
+    /* トリミング設定 */
     .trim-inputs { display: flex; justify-content: center; gap: 15px; margin: 5px 0; align-items: center; }
     .trim-box { display: flex; flex-direction: column; align-items: flex-start; }
     .trim-box label { font-size: 10px; color: #00f3ff; margin-bottom: 2px; }
@@ -40,7 +53,7 @@
 
     /* 譜面リスト */
     #chart-list {
-        width: 90%; max-width: 600px; height: 35vh; overflow-y: auto;
+        width: 90%; max-width: 600px; height: 30vh; overflow-y: auto;
         background: rgba(0, 20, 40, 0.6); border: 1px solid #00f3ff; 
         box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
         border-radius: 8px; padding: 10px; margin-bottom: 15px;
@@ -60,12 +73,14 @@
     /* ボタン */
     .menu-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .main-btn {
-        padding: 12px 25px; font-size: 14px; font-weight: bold; cursor: pointer;
+        padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer;
         color: #000; border: none; border-radius: 4px; 
         text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
     }
     #create-btn { background: #00f3ff; box-shadow: 0 0 10px rgba(0,243,255,0.4); }
     #import-btn { background: #e0e0e0; color: #333; }
+    #metro-btn { background: #0f0; box-shadow: 0 0 10px rgba(0,255,0,0.4); }
+    
     .main-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
 
     .btn-group { display: flex; gap: 5px; }
@@ -182,26 +197,43 @@
 <body>
 
     <div id="menu-screen">
-        <h1>CYBER TIMELINE v10</h1>
+        <h1>CYBER TIMELINE v13</h1>
         
-        <div id="trim-section">
-            <div style="font-size:11px; color:#aaa;">トリミング設定 (秒) - 0で指定なし</div>
-            <div class="trim-inputs">
-                <div class="trim-box"><label>START</label><input type="number" id="trim-start" value="0" min="0" step="0.1"></div>
-                <div class="trim-box"><label>END</label><input type="number" id="trim-end" value="0" min="0" step="0.1"></div>
+        <div class="config-area">
+            <div class="config-title">METRONOME MODE (NO FILE)</div>
+            <div class="metro-inputs">
+                <div class="input-box"><label>BPM</label><input type="number" id="metro-bpm" value="120" min="30" max="300"></div>
+                <div class="input-box"><label>TIME(s)</label><input type="number" id="metro-dur" value="60" min="10"></div>
+                <div class="input-box"><label>SOUND</label>
+                    <select id="metro-sound">
+                        <option value="wood">Wood (カッ)</option>
+                        <option value="beep">Beep (ピッ)</option>
+                        <option value="click">Click (チッ)</option>
+                    </select>
+                </div>
+                <div class="check-box"><input type="checkbox" id="metro-click" checked> Sound ON</div>
             </div>
+            <button id="metro-btn" class="main-btn" onclick="startMetronome()">START METRONOME</button>
+        </div>
+
+        <div class="config-area" style="border-color:#00f3ff;">
+            <div class="config-title" style="color:#00f3ff;">REC SETTING (FILE REQUIRED)</div>
+            <div class="trim-inputs">
+                <div class="trim-box"><label>START(s)</label><input type="number" id="trim-start" value="0" min="0" step="0.1"></div>
+                <div class="trim-box"><label>END(s)</label><input type="number" id="trim-end" value="0" min="0" step="0.1"></div>
+            </div>
+            <button id="create-btn" class="main-btn" onclick="startCreateNew()">NEW CHART</button>
         </div>
 
         <div id="chart-list"></div>
 
         <div class="menu-actions">
-            <button id="create-btn" class="main-btn" onclick="startCreateNew()">NEW CHART</button>
-            <button id="import-btn" class="main-btn" onclick="openImportModal()">IMPORT</button>
+            <button id="import-btn" class="main-btn" onclick="openImportModal()">IMPORT DATA</button>
         </div>
         
-        <p style="font-size:11px; margin-top:15px; color:#666;">※プレイ毎にmp3を選択してください</p>
-        <button onclick="resetAllData()" style="background:none; border:none; color:#444; font-size:10px; cursor:pointer;">[RESET]</button>
-        <input type="file" id="audio-input" accept="audio/*" style="display:none">
+        <button onclick="resetAllData()" style="background:none; border:none; color:#444; font-size:10px; margin-top:20px; cursor:pointer;">[RESET ALL DATA]</button>
+        
+        <input type="file" id="audio-input" accept=".mp3,audio/*" style="display:none">
     </div>
 
     <div id="game-screen">
@@ -278,7 +310,7 @@
     let currentChart = null;
     let audioCtx, musicBuffer, musicSource, gainNode;
     let isRunning = false;
-    let mode = ''; // REC, PLAY, AUTO
+    let mode = ''; // REC, PLAY, AUTO, METRONOME
     let startTime = 0;
     let animationId;
     
@@ -291,23 +323,27 @@
     let isFadingOut = false;
     let stats = { perfect: 0, good: 0, miss: 0, score: 0 };
     let editingId = null;
+    
+    // メトロノーム用
+    let metroNextTime = 0;
+    let metroBpm = 120;
 
     window.onload = () => {
         try {
-            const json = localStorage.getItem('cyber_timeline_v10');
+            const json = localStorage.getItem('cyber_timeline_v13');
             if (json) savedCharts = JSON.parse(json);
         } catch (e) { console.error(e); }
         renderChartList();
     };
 
     function saveCharts() {
-        localStorage.setItem('cyber_timeline_v10', JSON.stringify(savedCharts));
+        localStorage.setItem('cyber_timeline_v13', JSON.stringify(savedCharts));
         renderChartList();
     }
     
     function resetAllData() {
         if(confirm("全データを削除しますか？")) {
-            localStorage.removeItem('cyber_timeline_v10');
+            localStorage.removeItem('cyber_timeline_v13');
             savedCharts = [];
             renderChartList();
         }
@@ -315,14 +351,45 @@
 
     const audioInput = document.getElementById('audio-input');
 
-    async function loadAudio(file) {
+    async function initAudioCtx() {
         if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') await audioCtx.resume();
+    }
+
+    async function loadAudio(file) {
+        await initAudioCtx();
         const buf = await file.arrayBuffer();
         musicBuffer = await audioCtx.decodeAudioData(buf);
     }
 
-    // === メニュー ===
+    // === メトロノームモード ===
+    function startMetronome() {
+        initAudioCtx().then(() => {
+            const bpm = parseInt(document.getElementById('metro-bpm').value) || 120;
+            const dur = parseInt(document.getElementById('metro-dur').value) || 60;
+            metroBpm = bpm;
+            
+            // 仮想譜面を作成
+            const notes = [];
+            const interval = 60 / bpm;
+            for(let t = 0; t < dur; t += interval) {
+                notes.push({ time: t, duration: 0, type: 'tap' });
+            }
+
+            currentChart = {
+                id: 'metro', title: `METRO BPM:${bpm} (${dur}s)`,
+                data: notes, trimStart: 0, trimEnd: dur,
+                isMetro: true, bpm: bpm
+            };
+            
+            musicBuffer = null;
+            metroNextTime = 0; // 相対時間0からスタート
+            
+            startGame('METRONOME');
+        });
+    }
+
+    // === 録音・プレイ ===
     function startCreateNew() {
         const start = parseFloat(document.getElementById('trim-start').value) || 0;
         const end = parseFloat(document.getElementById('trim-end').value) || 0;
@@ -336,8 +403,7 @@
                 id: Date.now().toString(),
                 title: file.name.replace(/\.[^/.]+$/, ""),
                 data: [],
-                trimStart: start,
-                trimEnd: end
+                trimStart: start, trimEnd: end
             };
             startGame('REC');
         };
@@ -348,14 +414,13 @@
         currentChart = savedCharts.find(c => c.id === id);
         if(!currentChart) return;
         
-        // トリム表示更新
         document.getElementById('trim-start').value = currentChart.trimStart || 0;
         document.getElementById('trim-end').value = currentChart.trimEnd || 0;
 
-        const msg = playMode === 'AUTO' ? "プレビュー(自動再生)しますか？" : "プレイしますか？";
+        const msg = playMode === 'AUTO' ? "プレビュー(自動再生)" : "プレイ";
 
         setTimeout(() => {
-            if(confirm(`「${currentChart.title}」を${msg}\n音楽ファイルを選択してください。`)) {
+            if(confirm(`「${currentChart.title}」を${msg}します。\nMP3ファイルを選択してください。`)) {
                 audioInput.value = "";
                 audioInput.onchange = async (e) => {
                     const file = e.target.files[0];
@@ -378,9 +443,11 @@
         const disp = document.getElementById('mode-display');
         if(mode === 'REC') { disp.textContent = "● REC"; disp.style.color = "#ff4444"; }
         else if(mode === 'AUTO') { disp.textContent = "👁 AUTO"; disp.style.color = "#0f0"; }
+        else if(mode === 'METRONOME') { disp.textContent = "⏱ METRO"; disp.style.color = "#0f0"; }
         else { disp.textContent = "▶ PLAY"; disp.style.color = "#00f3ff"; }
 
-        if((mode === 'PLAY' || mode === 'AUTO') && currentChart.data) {
+        // フラグリセット
+        if(currentChart.data) {
             currentChart.data.forEach(d => { delete d._spawned; });
             if(currentChart.data.length > 0) {
                 const lastRel = Math.max(...currentChart.data.map(d => d.time + (d.duration || 0)));
@@ -389,9 +456,15 @@
         }
 
         resetState();
-        playMusic();
         
         startTime = audioCtx.currentTime;
+        
+        if(mode === 'METRONOME') {
+            // メトロノームは音を鳴らさず、ループ内でスケジュールする
+        } else {
+            playMusic();
+        }
+        
         isRunning = true;
         loop();
     }
@@ -418,11 +491,11 @@
         updateScoreUI();
     }
 
+    // --- 音声再生系 ---
     function playMusic() {
         if(musicSource) { try{musicSource.stop()}catch(e){} }
         musicSource = audioCtx.createBufferSource();
         musicSource.buffer = musicBuffer;
-        
         gainNode = audioCtx.createGain();
         musicSource.connect(gainNode);
         gainNode.connect(audioCtx.destination);
@@ -433,6 +506,40 @@
         const duration = tEnd - tStart;
 
         musicSource.start(0, tStart, duration);
+    }
+
+    function playClick(time) {
+        const soundType = document.getElementById('metro-sound').value;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        
+        if(soundType === 'wood') {
+            // ウッドブロック風 (Sine + Pitch Drop)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, time);
+            osc.frequency.exponentialRampToValueAtTime(300, time + 0.03);
+            g.gain.setValueAtTime(0.7, time);
+            g.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+            osc.start(time); osc.stop(time + 0.05);
+        }
+        else if(soundType === 'beep') {
+            // 電子音 (Square)
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1200, time);
+            g.gain.setValueAtTime(0.1, time);
+            g.gain.setValueAtTime(0, time + 0.05);
+            osc.start(time); osc.stop(time + 0.05);
+        }
+        else {
+            // クリック (High Sine)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1500, time);
+            osc.frequency.exponentialRampToValueAtTime(100, time + 0.02);
+            g.gain.setValueAtTime(0.5, time);
+            g.gain.exponentialRampToValueAtTime(0.01, time + 0.02);
+            osc.start(time); osc.stop(time + 0.02);
+        }
     }
 
     function quitGameForce() {
@@ -457,89 +564,139 @@
     // === ループ ===
     function loop() {
         if(!isRunning) return;
-        const now = audioCtx.currentTime - startTime;
-        const pxPerSec = SPEED_BASE * 1.2; // 固定速度またはスライダーで調整
+        const now = audioCtx.currentTime;
+        const gameTime = now - startTime;
+        
+        // --- メトロノーム音のスケジューリング (Lookahead) ---
+        if(mode === 'METRONOME' && document.getElementById('metro-click').checked) {
+            // リアルタイムBPM反映
+            const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
+            const interval = 60.0 / inputBpm;
+            
+            // 少し先(0.1秒)までを予約する
+            while (metroNextTime < gameTime + 0.1) {
+                if(metroNextTime <= currentChart.trimEnd) {
+                    playClick(startTime + metroNextTime);
+                }
+                metroNextTime += interval;
+            }
+        }
+
+        // --- ノーツ描画 ---
+        // メトロノームモードの場合、ノーツ間隔もBPMに合わせて動的に変えたいが
+        // 既存のchart.dataは固定されている。
+        // BPMを変えたら「ノーツの位置」も再計算する必要があるが、
+        // 簡易的に「chart.data自体」は使わず、BPMから計算して表示するロジックにする
+        
+        const pxPerSec = SPEED_BASE * 1.2; 
         const judgeX = window.innerWidth * 0.2;
 
-        if(mode === 'PLAY' || mode === 'AUTO') {
+        if(mode === 'METRONOME') {
+            // メトロノームモード専用のノーツ生成ロジック
+            // 現在のBPMに基づいて、次にくるノーツを表示する
+            // 厳密な譜面データではなく、一定間隔で無限に流れてくるイメージ
+            
+            const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
+            const interval = 60.0 / inputBpm;
+            
+            // 画面右端から出現させる
+            const lookAheadTime = (window.innerWidth - judgeX) / pxPerSec;
+            
+            // 出現すべきノーツの時間: Math.floor(gameTime / interval) * interval ...
+            // 次に出現するノーツのインデックス
+            const nextNoteIdx = Math.ceil((gameTime + lookAheadTime) / interval);
+            const nextNoteTime = nextNoteIdx * interval;
+            
+            // まだ生成していないなら生成
+            // IDを時刻ベースにして重複防止
+            const nid = `m-${nextNoteIdx}`;
+            if(!document.getElementById(nid) && nextNoteTime <= currentChart.trimEnd) {
+                // 画面右端付近なら生成
+                // 生成タイミング制御: nextNoteTime が (gameTime + lookAhead) 付近
+                // 少し余裕を持たせる
+                if(nextNoteTime < gameTime + lookAheadTime + 0.1) {
+                    createNoteElement({ time: nextNoteTime, duration: 0, type: 'tap' }, nid);
+                }
+            }
+        }
+        else if(mode !== 'REC') { 
+            // PLAY / AUTO
             const lookAhead = (window.innerWidth - judgeX) / pxPerSec;
             currentChart.data.forEach(d => {
-                if(!d._spawned && d.time < now + lookAhead + 1.5 && d.time > now - 1) {
+                if(!d._spawned && d.time < gameTime + lookAhead + 1.5 && d.time > gameTime - 1) {
                     createNoteElement(d);
                     d._spawned = true;
                 }
             });
+        }
 
-            activeNotes.forEach((n, idx) => {
-                const diff = n.data.time - now;
-                const x = judgeX + (diff * pxPerSec);
-                let width = NOTE_SIZE;
-                if(n.data.type === 'hold') width = (n.data.duration * pxPerSec) + NOTE_SIZE;
+        // ノーツ移動と削除 (全モード共通)
+        activeNotes.forEach((n, idx) => {
+            const diff = n.data.time - gameTime;
+            const x = judgeX + (diff * pxPerSec);
+            let width = NOTE_SIZE;
+            if(n.data.type === 'hold') width = (n.data.duration * pxPerSec) + NOTE_SIZE;
 
-                n.el.style.left = n.data.type === 'hold' ? `${x + (width/2) - (NOTE_SIZE/2)}px` : `${x}px`;
-                n.el.style.width = `${width}px`;
+            n.el.style.left = n.data.type === 'hold' ? `${x + (width/2) - (NOTE_SIZE/2)}px` : `${x}px`;
+            n.el.style.width = `${width}px`;
 
-                // --- AUTO MODE ---
-                if(mode === 'AUTO') {
-                    if(!n.processed) {
-                        if(n.data.type === 'tap' && diff <= 0) {
-                            triggerHit(n, 'PERFECT');
-                        }
-                        if(n.data.type === 'hold') {
-                            if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) {
-                                startHold(n);
-                            }
-                        }
+            // Auto/Metro判定
+            if(mode === 'AUTO' || mode === 'METRONOME') {
+                if(!n.processed) {
+                    if(n.data.type === 'tap' && diff <= 0) {
+                        // メトロノームモードでクリック音は別管理、ここは見た目だけ
+                        triggerHit(n, 'PERFECT', mode !== 'METRONOME'); 
                     }
-                    if(n.data.type === 'hold' && currentHoldNote && currentHoldNote.uid === n.uid) {
-                        const endTime = n.data.time + n.data.duration;
-                        if(now >= endTime) completeHold(n);
+                    // (メトロノームモードにHoldはない)
+                    if(n.data.type === 'hold') {
+                        if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) startHold(n, mode !== 'METRONOME');
                     }
                 }
-                // --- MANUAL PLAY MODE ---
-                else {
-                    // MISS (Time over)
-                    if(!n.processed) {
-                        if(n.data.type === 'tap' && diff < -J_GOOD) triggerMiss(n);
-                        if(n.data.type === 'hold' && diff < -J_GOOD && (!currentHoldNote || currentHoldNote.uid !== n.uid)) triggerMiss(n);
-                    }
-                    // HOLD自動完了はしない（ユーザーの離し操作を待つ）
-                    // ただし、余りに押しすぎた場合(endTimeを大きく過ぎた)の処理は inputEndで行うか、ここで強制終了するか
-                    // ここでは「押しっぱなし」はMissにせず、inputEndでタイミングを見る
+                if(n.data.type === 'hold' && currentHoldNote && currentHoldNote.uid === n.uid) {
+                    const endTime = n.data.time + n.data.duration;
+                    if(gameTime >= endTime) completeHold(n, mode !== 'METRONOME');
                 }
+            }
+            // Manual
+            else {
+                if(!n.processed) {
+                    if(n.data.type === 'tap' && diff < -J_GOOD) triggerMiss(n);
+                    if(n.data.type === 'hold' && diff < -J_GOOD && (!currentHoldNote || currentHoldNote.uid !== n.uid)) triggerMiss(n);
+                }
+            }
 
-                // 削除
-                if(n.processed) {
-                    if(n.data.type === 'tap' && diff < -0.1) removeNote(idx);
-                    if(n.data.type === 'hold' && now > n.data.time + n.data.duration + 0.2) removeNote(idx);
-                } else if(x + width < -100) {
-                    removeNote(idx);
-                }
-            });
+            if(n.processed) {
+                if(n.data.type === 'tap' && diff < -0.1) removeNote(idx);
+                if(n.data.type === 'hold' && gameTime > n.data.time + n.data.duration + 0.2) removeNote(idx);
+            } else if(x + width < -100) {
+                removeNote(idx);
+            }
+        });
 
-            // フェードアウト
-            const tStart = currentChart.trimStart || 0;
-            let tEnd = currentChart.trimEnd || 0;
-            if(tEnd === 0) tEnd = musicBuffer.duration;
-            const songDuration = tEnd - tStart;
-            const finishTime = Math.min(songDuration, lastNoteTime || 9999);
-            
-            if((now > finishTime && currentChart.data.length > 0) || (currentChart.data.length===0 && now > songDuration)) {
-                if(!isFadingOut) {
-                    isFadingOut = true;
-                    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
-                    setTimeout(showResult, 1200);
-                }
+        // 終了判定
+        let finishTime = lastNoteTime;
+        if(mode === 'METRONOME') finishTime = currentChart.trimEnd;
+        else if(mode === 'PLAY' && currentChart.trimEnd > 0) finishTime = currentChart.trimEnd - currentChart.trimStart; 
+
+        if((gameTime > finishTime + 2.0 && !isFadingOut)) {
+            if(musicSource && gainNode) {
+                isFadingOut = true;
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
+                setTimeout(showResult, 1200);
+            } else {
+                showResult();
             }
         }
 
-        if(now > musicBuffer.duration + 1 && !isFadingOut) showResult();
+        // 強制終了
+        if(musicBuffer && gameTime > musicBuffer.duration + 2 && !isFadingOut) showResult();
         else if (isRunning) animationId = requestAnimationFrame(loop);
     }
 
-    function createNoteElement(data) {
+    function createNoteElement(data, idOverride=null) {
         const el = document.createElement('div');
         el.className = data.type === 'hold' ? 'note note-hold' : 'note note-tap';
+        if(idOverride) el.id = idOverride;
         document.getElementById('notes-container').appendChild(el);
         activeNotes.push({ uid: Date.now()+Math.random(), data: data, el: el, processed: false });
     }
@@ -550,7 +707,7 @@
     }
 
     // === 判定 ===
-    function triggerHit(note, quality) {
+    function triggerHit(note, quality, sound=true) {
         note.processed = true;
         note.el.remove();
         if(quality === 'PERFECT') {
@@ -562,7 +719,7 @@
             stats.score += 500;
             showJudge("GOOD", "#0f0");
         }
-        playSE(quality === 'PERFECT' ? 800 : 600);
+        if(sound) playSE(quality === 'PERFECT' ? 800 : 600);
         updateScoreUI();
     }
 
@@ -574,13 +731,13 @@
         updateScoreUI();
     }
 
-    function startHold(note) {
+    function startHold(note, sound=true) {
         currentHoldNote = note;
         showJudge("HOLD...", "#ffaa00");
         document.getElementById('judge-point').classList.add('hold-anim');
-        playSE(600);
+        if(sound) playSE(600);
     }
-    function completeHold(note) {
+    function completeHold(note, sound=true) {
         note.processed = true;
         note.el.style.opacity = 0;
         currentHoldNote = null;
@@ -588,7 +745,7 @@
         stats.score += 1000;
         document.getElementById('judge-point').classList.remove('hold-anim');
         showJudge("PERFECT", "#00f3ff");
-        playSE(1000);
+        if(sound) playSE(1000);
         updateScoreUI();
     }
 
@@ -598,10 +755,10 @@
 
     // === 入力 ===
     const inputStart = (e) => {
-        if(!isRunning || mode === 'AUTO') return;
+        if(!isRunning || mode === 'AUTO' || mode === 'METRONOME') return;
         if(e.type === 'keydown') {
             if(e.code !== 'Space') return;
-            if(e.repeat) return; // キーリピート防止
+            if(e.repeat) return; 
         }
         if(e.type === 'touchstart') e.preventDefault();
 
@@ -635,7 +792,7 @@
     };
 
     const inputEnd = (e) => {
-        if(!isRunning || mode === 'AUTO') return;
+        if(!isRunning || mode === 'AUTO' || mode === 'METRONOME') return;
         if(e.type === 'keyup' && e.code !== 'Space') return;
         const now = audioCtx.currentTime - startTime;
 
@@ -647,20 +804,13 @@
             showJudge(type.toUpperCase(), "#fff");
         } 
         else if(mode === 'PLAY' && currentHoldNote) {
-            // ホールド離し判定 (重要: 終わり際で離したか)
             const endTime = currentHoldNote.data.time + currentHoldNote.data.duration;
-            const diff = now - endTime; // 正なら過ぎてる、負なら手前
-
-            // 終了時間の ±J_GOOD 以内なら成功とみなす
-            if (Math.abs(diff) < J_GOOD) {
-                completeHold(currentHoldNote);
-            } else {
-                // 早すぎた場合のみミス（遅すぎた場合はループ内で自動判定されることもあるが、ここで判定しても良い）
-                if (diff < -J_GOOD) {
-                    triggerMiss(currentHoldNote);
-                    currentHoldNote = null;
-                    document.getElementById('judge-point').classList.remove('hold-anim');
-                }
+            const diff = now - endTime; 
+            if (Math.abs(diff) < J_GOOD) completeHold(currentHoldNote);
+            else if (diff < -J_GOOD) {
+                triggerMiss(currentHoldNote);
+                currentHoldNote = null;
+                document.getElementById('judge-point').classList.remove('hold-anim');
             }
         }
     };
@@ -697,8 +847,10 @@
         isRunning = false;
         cancelAnimationFrame(animationId);
         
+        let score = 0;
         const total = currentChart.data.length;
-        const score = total > 0 ? Math.round(((stats.perfect*100 + stats.good*50)/(total*100))*100) : 0;
+        if(total > 0) score = Math.round(((stats.perfect*100 + stats.good*50)/(total*100))*100);
+        else if(mode === 'METRONOME') score = 100;
         
         document.getElementById('res-score').textContent = score;
         document.getElementById('res-perf').textContent = stats.perfect;
