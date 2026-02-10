@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CYBER TIMELINE v13</title>
+<title>CYBER TIMELINE v14 (iPad Fix)</title>
 <style>
     /* --- 全体設定 --- */
     body { 
@@ -23,6 +23,18 @@
         color: #00f3ff; text-transform: uppercase; letter-spacing: 4px; font-style: italic;
         text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
     }
+
+    /* ローディング画面 */
+    #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 2000;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .spinner {
+        width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00f3ff;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     /* エリア共通 */
     .config-area {
@@ -196,8 +208,13 @@
 </head>
 <body>
 
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-msg">NOW LOADING...</div>
+    </div>
+
     <div id="menu-screen">
-        <h1>CYBER TIMELINE v13</h1>
+        <h1>CYBER TIMELINE v14</h1>
         
         <div class="config-area">
             <div class="config-title">METRONOME MODE (NO FILE)</div>
@@ -206,9 +223,9 @@
                 <div class="input-box"><label>TIME(s)</label><input type="number" id="metro-dur" value="60" min="10"></div>
                 <div class="input-box"><label>SOUND</label>
                     <select id="metro-sound">
-                        <option value="wood">Wood (カッ)</option>
-                        <option value="beep">Beep (ピッ)</option>
-                        <option value="click">Click (チッ)</option>
+                        <option value="wood">Wood</option>
+                        <option value="beep">Beep</option>
+                        <option value="click">Click</option>
                     </select>
                 </div>
                 <div class="check-box"><input type="checkbox" id="metro-click" checked> Sound ON</div>
@@ -330,34 +347,42 @@
 
     window.onload = () => {
         try {
-            const json = localStorage.getItem('cyber_timeline_v13');
+            const json = localStorage.getItem('cyber_timeline_v14');
             if (json) savedCharts = JSON.parse(json);
         } catch (e) { console.error(e); }
         renderChartList();
     };
 
     function saveCharts() {
-        localStorage.setItem('cyber_timeline_v13', JSON.stringify(savedCharts));
+        localStorage.setItem('cyber_timeline_v14', JSON.stringify(savedCharts));
         renderChartList();
     }
     
     function resetAllData() {
         if(confirm("全データを削除しますか？")) {
-            localStorage.removeItem('cyber_timeline_v13');
+            localStorage.removeItem('cyber_timeline_v14');
             savedCharts = [];
             renderChartList();
         }
     }
 
     const audioInput = document.getElementById('audio-input');
+    const loadingOverlay = document.getElementById('loading-overlay');
 
+    // ★ iPad対応: 音声コンテキストをボタンクリック直後に初期化
     async function initAudioCtx() {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if(audioCtx.state === 'suspended') await audioCtx.resume();
+        if(!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if(audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
     }
 
     async function loadAudio(file) {
-        await initAudioCtx();
+        // コンテキストはinitAudioCtxで初期化済み想定だが念のため
+        if(!audioCtx) await initAudioCtx();
+        
         const buf = await file.arrayBuffer();
         musicBuffer = await audioCtx.decodeAudioData(buf);
     }
@@ -383,7 +408,7 @@
             };
             
             musicBuffer = null;
-            metroNextTime = 0; // 相対時間0からスタート
+            metroNextTime = 0;
             
             startGame('METRONOME');
         });
@@ -391,6 +416,9 @@
 
     // === 録音・プレイ ===
     function startCreateNew() {
+        // ★ iPad対応: まず音声機能をアクティブ化
+        initAudioCtx();
+
         const start = parseFloat(document.getElementById('trim-start').value) || 0;
         const end = parseFloat(document.getElementById('trim-end').value) || 0;
 
@@ -398,19 +426,31 @@
         audioInput.onchange = async (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            await loadAudio(file);
-            currentChart = {
-                id: Date.now().toString(),
-                title: file.name.replace(/\.[^/.]+$/, ""),
-                data: [],
-                trimStart: start, trimEnd: end
-            };
-            startGame('REC');
+            
+            // ローディング表示
+            loadingOverlay.style.display = 'flex';
+            try {
+                await loadAudio(file);
+                currentChart = {
+                    id: Date.now().toString(),
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    data: [],
+                    trimStart: start, trimEnd: end
+                };
+                loadingOverlay.style.display = 'none';
+                startGame('REC');
+            } catch(err) {
+                loadingOverlay.style.display = 'none';
+                alert("読み込みエラー: " + err + "\nMP3ファイルか確認してください。");
+            }
         };
         audioInput.click();
     }
 
     function startPlay(id, playMode = 'PLAY') {
+        // ★ iPad対応: 音声機能アクティブ化
+        initAudioCtx();
+
         currentChart = savedCharts.find(c => c.id === id);
         if(!currentChart) return;
         
@@ -425,8 +465,16 @@
                 audioInput.onchange = async (e) => {
                     const file = e.target.files[0];
                     if(!file) return;
-                    await loadAudio(file);
-                    startGame(playMode);
+                    
+                    loadingOverlay.style.display = 'flex';
+                    try {
+                        await loadAudio(file);
+                        loadingOverlay.style.display = 'none';
+                        startGame(playMode);
+                    } catch(err) {
+                        loadingOverlay.style.display = 'none';
+                        alert("読み込みエラー: " + err);
+                    }
                 };
                 audioInput.click();
             }
@@ -460,7 +508,7 @@
         startTime = audioCtx.currentTime;
         
         if(mode === 'METRONOME') {
-            // メトロノームは音を鳴らさず、ループ内でスケジュールする
+            metroNextTime = 0;
         } else {
             playMusic();
         }
@@ -515,7 +563,6 @@
         osc.connect(g); g.connect(audioCtx.destination);
         
         if(soundType === 'wood') {
-            // ウッドブロック風 (Sine + Pitch Drop)
             osc.type = 'sine';
             osc.frequency.setValueAtTime(800, time);
             osc.frequency.exponentialRampToValueAtTime(300, time + 0.03);
@@ -524,7 +571,6 @@
             osc.start(time); osc.stop(time + 0.05);
         }
         else if(soundType === 'beep') {
-            // 電子音 (Square)
             osc.type = 'square';
             osc.frequency.setValueAtTime(1200, time);
             g.gain.setValueAtTime(0.1, time);
@@ -532,7 +578,6 @@
             osc.start(time); osc.stop(time + 0.05);
         }
         else {
-            // クリック (High Sine)
             osc.type = 'sine';
             osc.frequency.setValueAtTime(1500, time);
             osc.frequency.exponentialRampToValueAtTime(100, time + 0.02);
@@ -567,13 +612,10 @@
         const now = audioCtx.currentTime;
         const gameTime = now - startTime;
         
-        // --- メトロノーム音のスケジューリング (Lookahead) ---
+        // メトロノーム音
         if(mode === 'METRONOME' && document.getElementById('metro-click').checked) {
-            // リアルタイムBPM反映
             const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
             const interval = 60.0 / inputBpm;
-            
-            // 少し先(0.1秒)までを予約する
             while (metroNextTime < gameTime + 0.1) {
                 if(metroNextTime <= currentChart.trimEnd) {
                     playClick(startTime + metroNextTime);
@@ -583,44 +625,25 @@
         }
 
         // --- ノーツ描画 ---
-        // メトロノームモードの場合、ノーツ間隔もBPMに合わせて動的に変えたいが
-        // 既存のchart.dataは固定されている。
-        // BPMを変えたら「ノーツの位置」も再計算する必要があるが、
-        // 簡易的に「chart.data自体」は使わず、BPMから計算して表示するロジックにする
-        
         const pxPerSec = SPEED_BASE * 1.2; 
         const judgeX = window.innerWidth * 0.2;
 
         if(mode === 'METRONOME') {
-            // メトロノームモード専用のノーツ生成ロジック
-            // 現在のBPMに基づいて、次にくるノーツを表示する
-            // 厳密な譜面データではなく、一定間隔で無限に流れてくるイメージ
-            
             const inputBpm = parseInt(document.getElementById('metro-bpm').value) || 120;
             const interval = 60.0 / inputBpm;
-            
-            // 画面右端から出現させる
             const lookAheadTime = (window.innerWidth - judgeX) / pxPerSec;
             
-            // 出現すべきノーツの時間: Math.floor(gameTime / interval) * interval ...
-            // 次に出現するノーツのインデックス
             const nextNoteIdx = Math.ceil((gameTime + lookAheadTime) / interval);
             const nextNoteTime = nextNoteIdx * interval;
-            
-            // まだ生成していないなら生成
-            // IDを時刻ベースにして重複防止
             const nid = `m-${nextNoteIdx}`;
+            
             if(!document.getElementById(nid) && nextNoteTime <= currentChart.trimEnd) {
-                // 画面右端付近なら生成
-                // 生成タイミング制御: nextNoteTime が (gameTime + lookAhead) 付近
-                // 少し余裕を持たせる
                 if(nextNoteTime < gameTime + lookAheadTime + 0.1) {
                     createNoteElement({ time: nextNoteTime, duration: 0, type: 'tap' }, nid);
                 }
             }
         }
         else if(mode !== 'REC') { 
-            // PLAY / AUTO
             const lookAhead = (window.innerWidth - judgeX) / pxPerSec;
             currentChart.data.forEach(d => {
                 if(!d._spawned && d.time < gameTime + lookAhead + 1.5 && d.time > gameTime - 1) {
@@ -630,7 +653,6 @@
             });
         }
 
-        // ノーツ移動と削除 (全モード共通)
         activeNotes.forEach((n, idx) => {
             const diff = n.data.time - gameTime;
             const x = judgeX + (diff * pxPerSec);
@@ -640,14 +662,12 @@
             n.el.style.left = n.data.type === 'hold' ? `${x + (width/2) - (NOTE_SIZE/2)}px` : `${x}px`;
             n.el.style.width = `${width}px`;
 
-            // Auto/Metro判定
+            // Auto/Metro
             if(mode === 'AUTO' || mode === 'METRONOME') {
                 if(!n.processed) {
                     if(n.data.type === 'tap' && diff <= 0) {
-                        // メトロノームモードでクリック音は別管理、ここは見た目だけ
                         triggerHit(n, 'PERFECT', mode !== 'METRONOME'); 
                     }
-                    // (メトロノームモードにHoldはない)
                     if(n.data.type === 'hold') {
                         if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) startHold(n, mode !== 'METRONOME');
                     }
@@ -688,7 +708,6 @@
             }
         }
 
-        // 強制終了
         if(musicBuffer && gameTime > musicBuffer.duration + 2 && !isFadingOut) showResult();
         else if (isRunning) animationId = requestAnimationFrame(loop);
     }
