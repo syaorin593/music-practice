@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CYBER TIMELINE v20</title>
+<title>CYBER TIMELINE v21</title>
 <style>
     /* --- 全体設定 --- */
     body { 
@@ -24,17 +24,26 @@
         text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
     }
 
-    /* ローディング */
+    /* ローディング & スタートオーバーレイ */
     #loading-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85); z-index: 2000;
+        background: rgba(0,0,0,0.9); z-index: 2000;
         display: none; flex-direction: column; align-items: center; justify-content: center;
     }
     .spinner {
-        width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #00f3ff;
-        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;
+        width: 60px; height: 60px; border: 6px solid #333; border-top: 6px solid #00f3ff;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* スタートボタン (iPad対策) */
+    #start-btn-overlay {
+        display: none; /* 初期は非表示 */
+        padding: 20px 50px; font-size: 24px; font-weight: bold; border-radius: 50px;
+        background: #00f3ff; color: #000; border: none; cursor: pointer;
+        box-shadow: 0 0 30px #00f3ff; animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
     /* エリア共通 */
     .config-area {
@@ -116,7 +125,7 @@
         z-index: 200; box-sizing: border-box;
     }
 
-    /* ナビボタン(iPad用大型化) */
+    /* ナビボタン */
     .nav-btn {
         padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 8px;
         color: white; border: 2px solid #fff; background: rgba(0,0,0,0.5);
@@ -243,10 +252,11 @@
     <div id="loading-overlay">
         <div class="spinner"></div>
         <div id="loading-msg">NOW LOADING...</div>
+        <button id="start-btn-overlay" onclick="onStartClick()">▶ TAP TO START</button>
     </div>
 
     <div id="menu-screen">
-        <h1>CYBER TIMELINE v20</h1>
+        <h1>CYBER TIMELINE v21</h1>
         
         <div class="config-area">
             <div class="config-title" style="color:#0f0;">METRONOME MODE (NO FILE)</div>
@@ -340,8 +350,8 @@
                 <div class="res-row" style="margin-top:10px;"><span class="res-label">MAX COMBO</span><span class="res-val" id="res-combo">0</span></div>
             </div>
             <br>
-            <button class="main-btn" style="background:#00f3ff; color:#000;" onclick="restartGameFromResult()">RETRY</button>
-            <button class="main-btn" style="background:#444; color:#fff;" onclick="closeResultToMenu()">MENU</button>
+            <button class="res-btn btn-retry" onclick="restartGameFromResult()">RETRY</button>
+            <button class="res-btn btn-menu" onclick="closeResultToMenu()">MENU</button>
         </div>
     </div>
 
@@ -389,34 +399,41 @@
 
     window.onload = () => {
         try {
-            const json = localStorage.getItem('cyber_timeline_v20');
+            const json = localStorage.getItem('cyber_timeline_v21');
             if (json) savedCharts = JSON.parse(json);
         } catch (e) { console.error(e); }
         renderChartList();
     };
 
     function saveCharts() {
-        localStorage.setItem('cyber_timeline_v20', JSON.stringify(savedCharts));
+        localStorage.setItem('cyber_timeline_v21', JSON.stringify(savedCharts));
         renderChartList();
     }
-    function resetAllData() { if(confirm("全データ削除しますか？")) { localStorage.removeItem('cyber_timeline_v20'); savedCharts = []; renderChartList(); } }
+    function resetAllData() { if(confirm("全データ削除しますか？")) { localStorage.removeItem('cyber_timeline_v21'); savedCharts = []; renderChartList(); } }
 
     const audioInput = document.getElementById('audio-input');
     const loadingOverlay = document.getElementById('loading-overlay');
+    const startBtnOverlay = document.getElementById('start-btn-overlay');
+    const loadingMsg = document.getElementById('loading-msg');
 
-    async function initAudioCtx() {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if(audioCtx.state === 'suspended') await audioCtx.resume();
+    // === AudioContext処理 (iPad対応版) ===
+    function initAudioCtx() {
+        if(!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
     }
+
     async function loadAudio(file) {
-        if(!audioCtx) await initAudioCtx();
+        initAudioCtx();
         const buf = await file.arrayBuffer();
         musicBuffer = await audioCtx.decodeAudioData(buf);
     }
 
     // === メトロノーム ===
     function startMetronome() {
-        initAudioCtx().then(() => {
+        // メトロノームはファイルロードがないので即開始
+        initAudioCtx();
+        audioCtx.resume().then(() => {
             const bpm = parseInt(document.getElementById('metro-bpm').value) || 120;
             const dur = parseInt(document.getElementById('metro-dur').value) || 60;
             const notes = [];
@@ -428,11 +445,37 @@
                 trimStart: 0, trimEnd: dur, isMetro: true, bpm: bpm
             };
             musicBuffer = null; metroNextTime = 0; isOverlayMetroEnabled = true;
+            
             startGame('METRONOME');
         });
     }
 
-    // === 録音・プレイ ===
+    // === 録音・プレイ (Start Overlay対応) ===
+    let pendingStartMode = '';
+
+    function showStartOverlay(mode) {
+        pendingStartMode = mode;
+        loadingMsg.style.display = 'none';
+        document.querySelector('.spinner').style.display = 'none';
+        startBtnOverlay.style.display = 'block';
+        // オーバーレイは既にflexで表示されているはず
+    }
+
+    function onStartClick() {
+        // ユーザーアクション内でResume
+        if(audioCtx) {
+            audioCtx.resume().then(() => {
+                loadingOverlay.style.display = 'none';
+                // リセット
+                loadingMsg.style.display = 'block';
+                document.querySelector('.spinner').style.display = 'block';
+                startBtnOverlay.style.display = 'none';
+                
+                startGame(pendingStartMode);
+            });
+        }
+    }
+
     function startCreateNew() {
         initAudioCtx(); 
         const start = parseFloat(document.getElementById('trim-start').value) || 0;
@@ -452,8 +495,7 @@
                     id: Date.now().toString(), title: file.name.replace(/\.[^/.]+$/, ""), data: [],
                     trimStart: start, trimEnd: end, overlayMetro: ovEnable, overlayBpm: ovBpm, overlayOffset: ovOffset
                 };
-                loadingOverlay.style.display = 'none';
-                startGame('REC');
+                showStartOverlay('REC');
             } catch(err) { loadingOverlay.style.display = 'none'; alert("Error: " + err); }
         };
         audioInput.click();
@@ -480,8 +522,7 @@
                     loadingOverlay.style.display = 'flex';
                     try {
                         await loadAudio(file);
-                        loadingOverlay.style.display = 'none';
-                        startGame(playMode);
+                        showStartOverlay(playMode);
                     } catch(err) { loadingOverlay.style.display = 'none'; alert("Error: " + err); }
                 };
                 audioInput.click();
@@ -500,7 +541,6 @@
         const btnSave = document.getElementById('btn-save');
         const btnBack = document.getElementById('btn-back');
         
-        // ボタンの切り替え
         if(mode === 'REC') { 
             disp.textContent = "● REC"; disp.style.color = "#ff4444"; 
             btnSave.style.display = 'inline-block';
@@ -527,7 +567,6 @@
             document.getElementById('btn-toggle-metro').style.display = 'none';
             metroNextTime = 0;
         } else {
-            // オーバーレイ初期化
             document.getElementById('btn-toggle-metro').style.display = 'inline-block';
             isOverlayMetroEnabled = currentChart.overlayMetro || false;
             updateMetroBtn();
