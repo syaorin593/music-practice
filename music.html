@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CYBER TIMELINE v10</title>
+<style>
+    /* --- 全体設定 --- */
+    body { 
+        background-color: #050510; color: #fff; 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        margin: 0; overflow: hidden; user-select: none; touch-action: none; 
+    }
+    
+    /* --- メニュー画面 --- */
+    #menu-screen {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+        z-index: 100; display: flex; flex-direction: column; align-items: center; padding-top: 20px;
+        overflow-y: auto;
+    }
+    h1 { 
+        color: #00f3ff; text-transform: uppercase; letter-spacing: 4px; font-style: italic;
+        text-shadow: 0 0 15px #00f3ff; margin-bottom: 10px; border-bottom: 2px solid #00f3ff; 
+    }
+
+    /* トリミング設定 */
+    #trim-section {
+        background: rgba(255, 255, 255, 0.05); border: 1px solid #555;
+        padding: 10px; border-radius: 8px; width: 90%; max-width: 600px;
+        margin-bottom: 10px; text-align: center;
+    }
+    .trim-inputs { display: flex; justify-content: center; gap: 15px; margin: 5px 0; align-items: center; }
+    .trim-box { display: flex; flex-direction: column; align-items: flex-start; }
+    .trim-box label { font-size: 10px; color: #00f3ff; margin-bottom: 2px; }
+    .trim-box input { 
+        width: 70px; background: #000; border: 1px solid #00f3ff; 
+        color: #fff; padding: 5px; text-align: center; border-radius: 4px; 
+    }
+
+    /* 譜面リスト */
+    #chart-list {
+        width: 90%; max-width: 600px; height: 35vh; overflow-y: auto;
+        background: rgba(0, 20, 40, 0.6); border: 1px solid #00f3ff; 
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        border-radius: 8px; padding: 10px; margin-bottom: 15px;
+    }
+    .chart-item {
+        background: rgba(255, 255, 255, 0.05); color: #fff; 
+        padding: 10px; margin-bottom: 5px; border-radius: 4px;
+        display: flex; justify-content: space-between; align-items: center; 
+        border-left: 4px solid #444; transition: 0.2s;
+    }
+    .chart-item:hover { background: rgba(0, 243, 255, 0.1); border-left-color: #00f3ff; }
+    
+    .chart-info { flex-grow: 1; text-align: left; cursor: pointer; }
+    .chart-title { font-size: 16px; font-weight: bold; }
+    .chart-sub { font-size: 11px; color: #888; }
+
+    /* ボタン */
+    .menu-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .main-btn {
+        padding: 12px 25px; font-size: 14px; font-weight: bold; cursor: pointer;
+        color: #000; border: none; border-radius: 4px; 
+        text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+    }
+    #create-btn { background: #00f3ff; box-shadow: 0 0 10px rgba(0,243,255,0.4); }
+    #import-btn { background: #e0e0e0; color: #333; }
+    .main-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+    .btn-group { display: flex; gap: 5px; }
+    .btn-mini { padding: 4px 8px; font-size: 10px; cursor: pointer; border: 1px solid #666; background: transparent; color: #aaa; border-radius: 4px; }
+    .btn-mini:hover { border-color: #fff; color: #fff; }
+    .btn-del { border-color: #f05; color: #f05; }
+    .btn-watch { border-color: #0f0; color: #0f0; }
+
+    /* --- ゲーム画面 --- */
+    #game-screen {
+        position: relative; width: 100vw; height: 100vh;
+        background: #050510; display: none;
+        background-image: 
+            linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+        background-size: 50px 50px;
+    }
+
+    #status-bar {
+        position: absolute; top: 0; width: 100%; padding: 10px;
+        display: flex; justify-content: space-between; align-items: center;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); 
+        z-index: 200; box-sizing: border-box; height: 50px;
+    }
+
+    #timeline-track {
+        position: absolute; top: 50%; left: 0; width: 100%; height: 160px;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        border-top: 2px solid #00f3ff; border-bottom: 2px solid #00f3ff;
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+    }
+
+    /* 判定枠 */
+    #judge-point {
+        position: absolute; top: 50%; left: 20%; 
+        width: 90px; height: 90px; 
+        transform: translate(-50%, -50%);
+        border: 4px solid #fff; border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        z-index: 10;
+        box-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+    .hit-anim { border-color: #00f3ff !important; background: rgba(0, 243, 255, 0.3) !important; transform: translate(-50%, -50%) scale(1.1) !important; box-shadow: 0 0 30px #00f3ff !important; }
+    .hold-anim { border-color: #ffaa00 !important; background: rgba(255, 170, 0, 0.2) !important; }
+
+    /* ノーツ */
+    .note {
+        position: absolute; top: 50%; height: 90px;
+        transform: translate(-50%, -50%);
+        z-index: 8; pointer-events: none;
+        box-sizing: border-box;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .note-tap {
+        width: 90px; border-radius: 50%;
+        background: #00f3ff; border: 4px solid #fff;
+        box-shadow: 0 0 15px #00f3ff;
+    }
+    .note-tap::after {
+        content: ''; position: absolute; width: 40px; height: 40px;
+        border-radius: 50%; background: rgba(255,255,255,0.4);
+    }
+    .note-hold {
+        border-radius: 45px; background: #ffaa00; border: 4px solid #fff;
+        box-shadow: 0 0 15px #ffaa00; justify-content: flex-end;
+    }
+    .note-hold::after {
+        content: ''; position: absolute; right: -4px; top: -4px;
+        width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; background: transparent;
+    }
+
+    #judge-text {
+        position: absolute; top: 25%; left: 20%; transform: translate(-50%, -50%);
+        font-size: 50px; font-weight: 900; font-style: italic;
+        text-shadow: 0 0 20px rgba(0,0,0,0.8); opacity: 0; z-index: 20; letter-spacing: 2px;
+    }
+
+    #score-live {
+        font-family: 'Courier New', monospace; font-size: 28px; 
+        color: #fff; text-shadow: 0 0 10px #00f3ff; font-weight: bold;
+    }
+
+    /* リザルト */
+    #result-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95); z-index: 900;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .result-box {
+        border: 1px solid #444; padding: 40px; width: 80%; max-width: 400px;
+        text-align: center; background: #111;
+        box-shadow: 0 0 50px rgba(0, 243, 255, 0.2); border-radius: 8px;
+    }
+    .res-score { font-size: 80px; font-weight: bold; color: #00f3ff; margin: 10px 0; font-family: 'Impact', sans-serif; }
+    .res-row { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid #333; color: #aaa; font-size: 14px; }
+    .res-val { color: #fff; font-weight: bold; font-size: 18px; }
+
+    /* モーダル */
+    .modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 900;
+        display: none; align-items: center; justify-content: center;
+    }
+    .modal-content {
+        background: #111; color: #fff; padding: 25px; border: 1px solid #333;
+        text-align: center; width: 90%; max-width: 400px; border-radius: 8px;
+    }
+    textarea { width: 100%; height: 80px; background: #000; color: #0f0; border: 1px solid #333; padding: 5px; }
+
+</style>
+</head>
+<body>
+
+    <div id="menu-screen">
+        <h1>CYBER TIMELINE v10</h1>
+        
+        <div id="trim-section">
+            <div style="font-size:11px; color:#aaa;">トリミング設定 (秒) - 0で指定なし</div>
+            <div class="trim-inputs">
+                <div class="trim-box"><label>START</label><input type="number" id="trim-start" value="0" min="0" step="0.1"></div>
+                <div class="trim-box"><label>END</label><input type="number" id="trim-end" value="0" min="0" step="0.1"></div>
+            </div>
+        </div>
+
+        <div id="chart-list"></div>
+
+        <div class="menu-actions">
+            <button id="create-btn" class="main-btn" onclick="startCreateNew()">NEW CHART</button>
+            <button id="import-btn" class="main-btn" onclick="openImportModal()">IMPORT</button>
+        </div>
+        
+        <p style="font-size:11px; margin-top:15px; color:#666;">※プレイ毎にmp3を選択してください</p>
+        <button onclick="resetAllData()" style="background:none; border:none; color:#444; font-size:10px; cursor:pointer;">[RESET]</button>
+        <input type="file" id="audio-input" accept="audio/*" style="display:none">
+    </div>
+
+    <div id="game-screen">
+        <div id="status-bar">
+            <div>
+                <button class="btn-mini" onclick="quitGameForce()" style="padding:8px 15px; border-color:#555; color:#fff;">EXIT</button>
+                <button class="btn-mini" onclick="restartGame(this)" style="padding:8px 15px; border-color:#00f3ff; color:#00f3ff; margin-left:10px;">RETRY</button>
+            </div>
+            <div id="mode-display" style="font-weight:bold; color:#00f3ff;">PLAY</div>
+            <div id="score-live">000000</div>
+        </div>
+
+        <div id="timeline-track">
+            <div id="judge-point"></div>
+            <div id="notes-container"></div>
+        </div>
+
+        <div id="judge-text">READY</div>
+        <div style="position:absolute; bottom:30px; width:100%; text-align:center; color:rgba(255,255,255,0.3); font-size:12px; letter-spacing:2px;">
+            SPACE KEY / TAP SCREEN
+        </div>
+    </div>
+
+    <div id="result-screen">
+        <div class="result-box">
+            <h2 style="color:#fff; margin-top:0;">COMPLETE</h2>
+            <div class="res-score" id="res-score">0</div>
+            <div class="res-row"><span>PERFECT</span><span class="res-val" style="color:#00f3ff" id="res-perf">0</span></div>
+            <div class="res-row"><span>GOOD</span><span class="res-val" style="color:#0f0" id="res-good">0</span></div>
+            <div class="res-row"><span>MISS</span><span class="res-val" style="color:#555" id="res-miss">0</span></div>
+            <br>
+            <button class="main-btn" style="background:#00f3ff; color:#000;" onclick="restartGameFromResult()">RETRY</button>
+            <button class="main-btn" style="background:#444; color:#fff;" onclick="closeResultToMenu()">MENU</button>
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <h3>EXPORT DATA</h3>
+            <textarea id="export-text" readonly></textarea>
+            <br><br>
+            <button class="btn-mini" onclick="copyToClipboard()" style="border-color:#00f3ff; color:#00f3ff;">COPY</button>
+            <button class="btn-mini" onclick="closeModal('export-modal')">CLOSE</button>
+        </div>
+    </div>
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <h3>IMPORT DATA</h3>
+            <textarea id="import-text" placeholder='Paste code here'></textarea>
+            <br><br>
+            <button class="btn-mini" onclick="executeImport()" style="border-color:#00f3ff; color:#00f3ff;">ADD</button>
+            <button class="btn-mini" onclick="closeModal('import-modal')">CLOSE</button>
+        </div>
+    </div>
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h3>EDIT TITLE</h3>
+            <input type="text" id="edit-title-input" style="padding:10px; width:80%; background:#000; color:#fff; border:1px solid #444;">
+            <br><br>
+            <button class="btn-mini" onclick="saveEditedTitle()" style="border-color:#00f3ff; color:#00f3ff;">SAVE</button>
+            <button class="btn-mini" onclick="closeModal('edit-modal')">CANCEL</button>
+        </div>
+    </div>
+
+<script>
+    // === 設定 ===
+    const J_PERFECT = 0.08;
+    const J_GOOD = 0.18;
+    const SPEED_BASE = 400; // px/sec
+    const NOTE_SIZE = 90;
+
+    // === 変数 ===
+    let savedCharts = [];
+    let currentChart = null;
+    let audioCtx, musicBuffer, musicSource, gainNode;
+    let isRunning = false;
+    let mode = ''; // REC, PLAY, AUTO
+    let startTime = 0;
+    let animationId;
+    
+    // 録音・プレイ用
+    let recStartTime = 0;
+    let isRecHolding = false;
+    let activeNotes = [];
+    let currentHoldNote = null;
+    let lastNoteTime = 0;
+    let isFadingOut = false;
+    let stats = { perfect: 0, good: 0, miss: 0, score: 0 };
+    let editingId = null;
+
+    window.onload = () => {
+        try {
+            const json = localStorage.getItem('cyber_timeline_v10');
+            if (json) savedCharts = JSON.parse(json);
+        } catch (e) { console.error(e); }
+        renderChartList();
+    };
+
+    function saveCharts() {
+        localStorage.setItem('cyber_timeline_v10', JSON.stringify(savedCharts));
+        renderChartList();
+    }
+    
+    function resetAllData() {
+        if(confirm("全データを削除しますか？")) {
+            localStorage.removeItem('cyber_timeline_v10');
+            savedCharts = [];
+            renderChartList();
+        }
+    }
+
+    const audioInput = document.getElementById('audio-input');
+
+    async function loadAudio(file) {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if(audioCtx.state === 'suspended') await audioCtx.resume();
+        const buf = await file.arrayBuffer();
+        musicBuffer = await audioCtx.decodeAudioData(buf);
+    }
+
+    // === メニュー ===
+    function startCreateNew() {
+        const start = parseFloat(document.getElementById('trim-start').value) || 0;
+        const end = parseFloat(document.getElementById('trim-end').value) || 0;
+
+        audioInput.value = "";
+        audioInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            await loadAudio(file);
+            currentChart = {
+                id: Date.now().toString(),
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                data: [],
+                trimStart: start,
+                trimEnd: end
+            };
+            startGame('REC');
+        };
+        audioInput.click();
+    }
+
+    function startPlay(id, playMode = 'PLAY') {
+        currentChart = savedCharts.find(c => c.id === id);
+        if(!currentChart) return;
+        
+        // トリム表示更新
+        document.getElementById('trim-start').value = currentChart.trimStart || 0;
+        document.getElementById('trim-end').value = currentChart.trimEnd || 0;
+
+        const msg = playMode === 'AUTO' ? "プレビュー(自動再生)しますか？" : "プレイしますか？";
+
+        setTimeout(() => {
+            if(confirm(`「${currentChart.title}」を${msg}\n音楽ファイルを選択してください。`)) {
+                audioInput.value = "";
+                audioInput.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if(!file) return;
+                    await loadAudio(file);
+                    startGame(playMode);
+                };
+                audioInput.click();
+            }
+        }, 50);
+    }
+
+    // === ゲーム開始 ===
+    function startGame(selectedMode) {
+        mode = selectedMode;
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+
+        const disp = document.getElementById('mode-display');
+        if(mode === 'REC') { disp.textContent = "● REC"; disp.style.color = "#ff4444"; }
+        else if(mode === 'AUTO') { disp.textContent = "👁 AUTO"; disp.style.color = "#0f0"; }
+        else { disp.textContent = "▶ PLAY"; disp.style.color = "#00f3ff"; }
+
+        if((mode === 'PLAY' || mode === 'AUTO') && currentChart.data) {
+            currentChart.data.forEach(d => { delete d._spawned; });
+            if(currentChart.data.length > 0) {
+                const lastRel = Math.max(...currentChart.data.map(d => d.time + (d.duration || 0)));
+                lastNoteTime = lastRel + 2.0;
+            } else { lastNoteTime = 0; }
+        }
+
+        resetState();
+        playMusic();
+        
+        startTime = audioCtx.currentTime;
+        isRunning = true;
+        loop();
+    }
+
+    function restartGame(btn) {
+        if(btn) btn.blur(); 
+        if(confirm("最初からやり直しますか？")) {
+            isRunning = false;
+            cancelAnimationFrame(animationId);
+            if(musicSource) { try{musicSource.stop()}catch(e){} }
+            startGame(mode);
+        }
+    }
+    
+    function restartGameFromResult() { startGame(mode); }
+
+    function resetState() {
+        document.getElementById('notes-container').innerHTML = '';
+        activeNotes = [];
+        currentHoldNote = null;
+        isRecHolding = false;
+        isFadingOut = false;
+        stats = { perfect: 0, good: 0, miss: 0, score: 0 };
+        updateScoreUI();
+    }
+
+    function playMusic() {
+        if(musicSource) { try{musicSource.stop()}catch(e){} }
+        musicSource = audioCtx.createBufferSource();
+        musicSource.buffer = musicBuffer;
+        
+        gainNode = audioCtx.createGain();
+        musicSource.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        const tStart = currentChart.trimStart || 0;
+        let tEnd = currentChart.trimEnd || 0;
+        if(tEnd === 0 || tEnd > musicBuffer.duration) tEnd = musicBuffer.duration;
+        const duration = tEnd - tStart;
+
+        musicSource.start(0, tStart, duration);
+    }
+
+    function quitGameForce() {
+        isRunning = false;
+        if(musicSource) { try{musicSource.stop()}catch(e){} }
+        cancelAnimationFrame(animationId);
+        
+        if(mode === 'REC') {
+            currentChart.data.sort((a,b) => a.time - b.time);
+            const idx = savedCharts.findIndex(c => c.id === currentChart.id);
+            if(idx >= 0) savedCharts[idx] = currentChart;
+            else savedCharts.push(currentChart);
+            saveCharts();
+        }
+
+        document.getElementById('result-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+        renderChartList();
+    }
+
+    // === ループ ===
+    function loop() {
+        if(!isRunning) return;
+        const now = audioCtx.currentTime - startTime;
+        const pxPerSec = SPEED_BASE * 1.2; // 固定速度またはスライダーで調整
+        const judgeX = window.innerWidth * 0.2;
+
+        if(mode === 'PLAY' || mode === 'AUTO') {
+            const lookAhead = (window.innerWidth - judgeX) / pxPerSec;
+            currentChart.data.forEach(d => {
+                if(!d._spawned && d.time < now + lookAhead + 1.5 && d.time > now - 1) {
+                    createNoteElement(d);
+                    d._spawned = true;
+                }
+            });
+
+            activeNotes.forEach((n, idx) => {
+                const diff = n.data.time - now;
+                const x = judgeX + (diff * pxPerSec);
+                let width = NOTE_SIZE;
+                if(n.data.type === 'hold') width = (n.data.duration * pxPerSec) + NOTE_SIZE;
+
+                n.el.style.left = n.data.type === 'hold' ? `${x + (width/2) - (NOTE_SIZE/2)}px` : `${x}px`;
+                n.el.style.width = `${width}px`;
+
+                // --- AUTO MODE ---
+                if(mode === 'AUTO') {
+                    if(!n.processed) {
+                        if(n.data.type === 'tap' && diff <= 0) {
+                            triggerHit(n, 'PERFECT');
+                        }
+                        if(n.data.type === 'hold') {
+                            if(diff <= 0 && (!currentHoldNote || currentHoldNote.uid !== n.uid)) {
+                                startHold(n);
+                            }
+                        }
+                    }
+                    if(n.data.type === 'hold' && currentHoldNote && currentHoldNote.uid === n.uid) {
+                        const endTime = n.data.time + n.data.duration;
+                        if(now >= endTime) completeHold(n);
+                    }
+                }
+                // --- MANUAL PLAY MODE ---
+                else {
+                    // MISS (Time over)
+                    if(!n.processed) {
+                        if(n.data.type === 'tap' && diff < -J_GOOD) triggerMiss(n);
+                        if(n.data.type === 'hold' && diff < -J_GOOD && (!currentHoldNote || currentHoldNote.uid !== n.uid)) triggerMiss(n);
+                    }
+                    // HOLD自動完了はしない（ユーザーの離し操作を待つ）
+                    // ただし、余りに押しすぎた場合(endTimeを大きく過ぎた)の処理は inputEndで行うか、ここで強制終了するか
+                    // ここでは「押しっぱなし」はMissにせず、inputEndでタイミングを見る
+                }
+
+                // 削除
+                if(n.processed) {
+                    if(n.data.type === 'tap' && diff < -0.1) removeNote(idx);
+                    if(n.data.type === 'hold' && now > n.data.time + n.data.duration + 0.2) removeNote(idx);
+                } else if(x + width < -100) {
+                    removeNote(idx);
+                }
+            });
+
+            // フェードアウト
+            const tStart = currentChart.trimStart || 0;
+            let tEnd = currentChart.trimEnd || 0;
+            if(tEnd === 0) tEnd = musicBuffer.duration;
+            const songDuration = tEnd - tStart;
+            const finishTime = Math.min(songDuration, lastNoteTime || 9999);
+            
+            if((now > finishTime && currentChart.data.length > 0) || (currentChart.data.length===0 && now > songDuration)) {
+                if(!isFadingOut) {
+                    isFadingOut = true;
+                    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.0);
+                    setTimeout(showResult, 1200);
+                }
+            }
+        }
+
+        if(now > musicBuffer.duration + 1 && !isFadingOut) showResult();
+        else if (isRunning) animationId = requestAnimationFrame(loop);
+    }
+
+    function createNoteElement(data) {
+        const el = document.createElement('div');
+        el.className = data.type === 'hold' ? 'note note-hold' : 'note note-tap';
+        document.getElementById('notes-container').appendChild(el);
+        activeNotes.push({ uid: Date.now()+Math.random(), data: data, el: el, processed: false });
+    }
+    function removeNote(idx) {
+        const n = activeNotes[idx];
+        if(n && n.el) n.el.remove();
+        activeNotes.splice(idx, 1);
+    }
+
+    // === 判定 ===
+    function triggerHit(note, quality) {
+        note.processed = true;
+        note.el.remove();
+        if(quality === 'PERFECT') {
+            stats.perfect++;
+            stats.score += 1000;
+            showJudge("PERFECT", "#00f3ff");
+        } else {
+            stats.good++;
+            stats.score += 500;
+            showJudge("GOOD", "#0f0");
+        }
+        playSE(quality === 'PERFECT' ? 800 : 600);
+        updateScoreUI();
+    }
+
+    function triggerMiss(note) {
+        note.processed = true;
+        note.el.style.opacity = 0.3;
+        stats.miss++;
+        showJudge("MISS", "#555");
+        updateScoreUI();
+    }
+
+    function startHold(note) {
+        currentHoldNote = note;
+        showJudge("HOLD...", "#ffaa00");
+        document.getElementById('judge-point').classList.add('hold-anim');
+        playSE(600);
+    }
+    function completeHold(note) {
+        note.processed = true;
+        note.el.style.opacity = 0;
+        currentHoldNote = null;
+        stats.perfect++;
+        stats.score += 1000;
+        document.getElementById('judge-point').classList.remove('hold-anim');
+        showJudge("PERFECT", "#00f3ff");
+        playSE(1000);
+        updateScoreUI();
+    }
+
+    function updateScoreUI() {
+        document.getElementById('score-live').textContent = stats.score.toString().padStart(6, '0');
+    }
+
+    // === 入力 ===
+    const inputStart = (e) => {
+        if(!isRunning || mode === 'AUTO') return;
+        if(e.type === 'keydown') {
+            if(e.code !== 'Space') return;
+            if(e.repeat) return; // キーリピート防止
+        }
+        if(e.type === 'touchstart') e.preventDefault();
+
+        const now = audioCtx.currentTime - startTime;
+        const jp = document.getElementById('judge-point');
+        jp.classList.remove('hit-anim'); void jp.offsetWidth; jp.classList.add('hit-anim');
+
+        if(mode === 'REC') {
+            if(isRecHolding) return;
+            recStartTime = now;
+            isRecHolding = true;
+            playSE(600);
+        } else {
+            let target = null;
+            let minDiff = 999;
+            activeNotes.forEach(n => {
+                if(n.processed) return;
+                const diff = Math.abs(n.data.time - now);
+                if(diff < J_GOOD && diff < minDiff) { minDiff = diff; target = n; }
+            });
+
+            if(target) {
+                if(target.data.type === 'tap') {
+                    if(minDiff <= J_PERFECT) triggerHit(target, 'PERFECT');
+                    else triggerHit(target, 'GOOD');
+                } else {
+                    startHold(target);
+                }
+            }
+        }
+    };
+
+    const inputEnd = (e) => {
+        if(!isRunning || mode === 'AUTO') return;
+        if(e.type === 'keyup' && e.code !== 'Space') return;
+        const now = audioCtx.currentTime - startTime;
+
+        if(mode === 'REC' && isRecHolding) {
+            const duration = now - recStartTime;
+            const type = duration > 0.15 ? 'hold' : 'tap';
+            currentChart.data.push({ time: recStartTime, duration: type==='hold'?duration:0, type: type });
+            isRecHolding = false;
+            showJudge(type.toUpperCase(), "#fff");
+        } 
+        else if(mode === 'PLAY' && currentHoldNote) {
+            // ホールド離し判定 (重要: 終わり際で離したか)
+            const endTime = currentHoldNote.data.time + currentHoldNote.data.duration;
+            const diff = now - endTime; // 正なら過ぎてる、負なら手前
+
+            // 終了時間の ±J_GOOD 以内なら成功とみなす
+            if (Math.abs(diff) < J_GOOD) {
+                completeHold(currentHoldNote);
+            } else {
+                // 早すぎた場合のみミス（遅すぎた場合はループ内で自動判定されることもあるが、ここで判定しても良い）
+                if (diff < -J_GOOD) {
+                    triggerMiss(currentHoldNote);
+                    currentHoldNote = null;
+                    document.getElementById('judge-point').classList.remove('hold-anim');
+                }
+            }
+        }
+    };
+
+    window.addEventListener('keydown', inputStart);
+    window.addEventListener('keyup', inputEnd);
+    const gs = document.getElementById('game-screen');
+    gs.addEventListener('touchstart', inputStart, {passive:false});
+    gs.addEventListener('touchend', inputEnd);
+    gs.addEventListener('mousedown', inputStart);
+    gs.addEventListener('mouseup', inputEnd);
+
+    // === UI ===
+    function showJudge(text, color) {
+        const el = document.getElementById('judge-text');
+        el.textContent = text;
+        el.style.color = color;
+        el.style.opacity = 1;
+        el.animate([{opacity:1, transform:"translate(-50%,-50%) scale(1.5)"}, {opacity:0, transform:"translate(-50%,-50%) scale(1.0)"}], {duration:200, fill:'forwards'});
+    }
+    
+    function playSE(f) {
+        if(!audioCtx) return;
+        const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.frequency.setValueAtTime(f, audioCtx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.1);
+        g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.1);
+        o.start(); o.stop(audioCtx.currentTime+0.1);
+    }
+
+    function showResult() {
+        isRunning = false;
+        cancelAnimationFrame(animationId);
+        
+        const total = currentChart.data.length;
+        const score = total > 0 ? Math.round(((stats.perfect*100 + stats.good*50)/(total*100))*100) : 0;
+        
+        document.getElementById('res-score').textContent = score;
+        document.getElementById('res-perf').textContent = stats.perfect;
+        document.getElementById('res-good').textContent = stats.good;
+        document.getElementById('res-miss').textContent = stats.miss;
+        document.getElementById('result-screen').style.display = 'flex';
+    }
+    
+    function closeResultToMenu() {
+        document.getElementById('result-screen').style.display = 'none';
+        quitGameForce();
+    }
+
+    // === リスト & 編集 ===
+    function renderChartList() {
+        const list = document.getElementById('chart-list');
+        list.innerHTML = '';
+        if(savedCharts.length === 0) { list.innerHTML = '<div style="padding:20px; text-align:center; color:#aaa;">NO CHARTS</div>'; return; }
+        savedCharts.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'chart-item';
+            div.innerHTML = `
+                <div class="chart-info" onclick="startPlay('${c.id}', 'PLAY')">
+                    <div class="chart-title">${c.title}</div>
+                    <div class="chart-sub">Notes: ${c.data.length} (${c.trimStart||0}s - ${c.trimEnd||'End'})</div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-mini btn-watch" onclick="startPlay('${c.id}', 'AUTO')">WATCH</button>
+                    <button class="btn-mini" onclick="openEditModal('${c.id}')">EDIT</button>
+                    <button class="btn-mini" onclick="openExportModal('${c.id}')">EXP</button>
+                    <button class="btn-mini btn-del" onclick="deleteChart('${c.id}')">DEL</button>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function openEditModal(id) {
+        editingId = id;
+        const c = savedCharts.find(x => x.id === id);
+        document.getElementById('edit-title-input').value = c.title;
+        document.getElementById('edit-modal').style.display = 'flex';
+    }
+    function saveEditedTitle() {
+        const val = document.getElementById('edit-title-input').value;
+        if(val) {
+            const c = savedCharts.find(x => x.id === editingId);
+            c.title = val;
+            saveCharts();
+        }
+        closeModal('edit-modal');
+    }
+
+    function deleteChart(id) { if(confirm("DELETE?")) { savedCharts = savedCharts.filter(c => c.id !== id); saveCharts(); } }
+    function openExportModal(id) { document.getElementById('export-text').value = JSON.stringify(savedCharts.find(x => x.id === id)); document.getElementById('export-modal').style.display = 'flex'; }
+    function copyToClipboard() { document.getElementById('export-text').select(); document.execCommand('copy'); alert("COPIED"); }
+    function openImportModal() { document.getElementById('import-text').value = ""; document.getElementById('import-modal').style.display = 'flex'; }
+    function executeImport() { try { const d = JSON.parse(document.getElementById('import-text').value); if(!d.id) throw 0; d.id = Date.now().toString(); savedCharts.push(d); saveCharts(); closeModal('import-modal'); alert("IMPORTED"); } catch(e) { alert("INVALID DATA"); } }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>
